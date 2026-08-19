@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#ECEEE8" />
+<title>Terrace Kettlebell Workout</title>
+<style>
+  :root{
+    --bg:#ECEEE8;
+    --panel:#FFFFFF;
+    --ink:#1C1F1D;
+    --muted:#6B6F68;
+    --line:#D8D3C4;
+    --work:#B23A20;
+    --rest:#3B6E71;
+    --accent:#B8892B;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  header.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);
+    padding-top:env(safe-area-inset-top);}
+  .brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--muted);
+    padding:10px 16px 6px;}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:0 12px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    padding:9px 14px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;}
+  .tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  main{flex:1;padding:16px 16px 40px;}
+  h1{font-size:clamp(22px,7vw,28px);font-weight:800;letter-spacing:.01em;margin:4px 0 2px;text-transform:uppercase;}
+  .subtitle{color:var(--muted);font-weight:600;margin:0 0 16px;font-size:14px;}
+  .info{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    margin-bottom:14px;font-size:14px;font-weight:600;color:var(--muted);}
+  .info b{color:var(--ink);}
+  .tip{font-size:12px;color:var(--muted);font-style:italic;margin:-6px 0 14px;}
+  .now{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+    margin-bottom:18px;text-align:center;transition:border-color .15s ease;}
+  .now.phase-work{border-color:var(--work);}
+  .now.phase-rest{border-color:var(--rest);}
+  .now-label{font-size:clamp(17px,6vw,21px);font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+  .now-time{font-size:clamp(42px,16vw,64px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin:4px 0;}
+  .now.phase-work .now-time{color:var(--work);}
+  .now.phase-rest .now-time{color:var(--rest);}
+  .now-sub{color:var(--muted);font-weight:600;font-size:14px;min-height:18px;}
+  .dots{display:flex;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap;}
+  .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:transparent;transition:background-color .15s ease,border-color .15s ease;}
+  .dot.filled{background:var(--accent);border-color:var(--accent);}
+  .dot.active{border-color:var(--work);}
+  .controls{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+  .btn{border:none;border-radius:10px;padding:12px 18px;font-weight:800;font-size:14px;
+    text-transform:uppercase;letter-spacing:.03em;min-height:44px;}
+  .btn-primary{background:var(--ink);color:var(--bg);}
+  .btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn:disabled{opacity:.4;}
+  .exlist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+  .exitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+  .exitem.current{border-color:var(--work);box-shadow:0 0 0 1px var(--work) inset;}
+  .checkline{display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .checkline input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--ink);}
+  .exname{font-weight:700;font-size:16px;}
+  input:checked + .exname{opacity:.45;text-decoration:line-through;}
+  .exsub{color:var(--muted);font-size:13px;margin:4px 0 4px 0;font-weight:600;}
+  .checklist .exsub, .checklist .cue{margin-left:30px;}
+  .cue{margin-left:0;margin-top:4px;}
+  .cue summary{color:var(--rest);font-weight:700;font-size:12px;text-transform:uppercase;
+    letter-spacing:.04em;cursor:pointer;list-style:none;}
+  .cue summary::-webkit-details-marker{display:none;}
+  .cue p{margin:6px 0 0;font-size:14px;color:var(--ink);}
+  .seqlist{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:8px;}
+  .seqitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+    display:flex;align-items:baseline;gap:8px;font-size:14px;}
+  .seqnum{font-weight:800;color:var(--accent);flex:0 0 auto;}
+  .stretch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .timer-chip{font-variant-numeric:tabular-nums;font-weight:800;min-width:44px;text-align:right;font-size:14px;}
+  footer.note{padding:10px 16px calc(20px + env(safe-area-inset-bottom));color:var(--muted);
+    font-size:12px;text-align:center;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">Terrace KB Program</div>
+    <div class="tabs" id="tabs"></div>
+  </header>
+  <main id="content"></main>
+  <footer class="note">Tap Start on circuit/EMOM days — sound and a short vibration mark each change.</footer>
+</div>
+
+<script>
+  // ---------- Data ----------
+  const DAYS = [
+    { id:'warmup', type:'list', title:'Warm-up', subtitle:'~4 min, every session', items:[
+      { name:'Arm circles', sub:'20 sec each direction', cue:'Small circles, gradually bigger, then reverse direction.' },
+      { name:'Kettlebell halos', sub:'8 kg — 10 each way', cue:'Hold the horns at chest height, circle it around your head, brace your core.' },
+      { name:'Bodyweight squats', sub:'15 reps', cue:'Hips back, chest up, drive through your heels.' },
+      { name:'Inchworm walkout', sub:'8 reps (alt: Cat-Cow, 10 reps)', cue:'Hinge, walk your hands out to a plank, walk back, stand up.' },
+      { name:'Shoulder pass-throughs', sub:'10 reps', cue:'Swing straight arms up and back overhead in a wide arc.' }
+    ]},
+    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20, items:[
+      { name:'Goblet push press', sub:'8 kg — 8 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
+      { name:'Push-ups', sub:'12 reps', cue:'Straight line head to heels, elbows about 45° from your body.' },
+      { name:'KB swings', sub:'12 kg — 15 reps · cardio', cue:'Hip hinge and snap — not a squat. Let the bell float, don\u2019t lift it with your arms.' },
+      { name:'Floor press, alternating', sub:'12 kg — 8/side', cue:'Lying on your back, press one arm up, lower with control, switch.' }
+    ]},
+    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20, items:[
+      { name:'Bent-over row, alternating', sub:'12 kg — 10/side', cue:'Flat-back hinge, pull your elbow back, squeeze the shoulder blade.' },
+      { name:'Bird-dog row', sub:'8 kg — 8/side', cue:'Hands and knees, row one arm up while extending the opposite leg straight back.' },
+      { name:'High pulls', sub:'12 kg — 12 reps · cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading.' },
+      { name:'Superman hold', sub:'20–30 sec', cue:'Face down, lift arms/chest/legs together, hold.' }
+    ]},
+    { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:4, restBetween:75,
+      weight:'Single KB — start 8 kg, progress to 12 kg', reps:'6 reps each move, then switch sides',
+      sequence:[
+        { name:'Clean', cue:'Swing the bell up from between your legs, catch it in the rack position.' },
+        { name:'Press', cue:'Drive the bell straight overhead from the rack position.' },
+        { name:'Reverse lunge', cue:'Step back, back knee toward the ground, drive through the front heel.' },
+        { name:'Swing', cue:'Hip hinge and snap the bell up to chest height.' }
+      ]
+    },
+    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Push/Pull Combo + Core', rounds:4, work:40, rest:20, items:[
+      { name:'Thrusters', sub:'12 kg — 10 reps', cue:'Goblet squat into an overhead press, driven by the legs.' },
+      { name:'Single-arm row', sub:'12 kg — 10/side', cue:'Hinge, row one side, control the lowering.' },
+      { name:'Plank', sub:'30–45 sec', cue:'Straight line, brace core, squeeze glutes.' },
+      { name:'KB snatch', sub:'8 kg — 6/side · cardio', cue:'Swing back, snap the hips, punch your hand through overhead.' }
+    ]},
+    { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine · EMOM', minutes:18, items:[
+      { name:'KB swings', sub:'12 kg — 15 reps', cue:'Hip hinge and snap — not a squat.' },
+      { name:'Push-ups', sub:'10 reps', cue:'Straight line head to heels.' },
+      { name:'KB snatch', sub:'8 kg — 6/side', cue:'Swing back, snap the hips, punch your hand through overhead.' }
+    ]},
+    { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2–3 min, every session', items:[
+      { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
+      { name:'Cross-body shoulder stretch', sub:'30 sec each side', cue:'Pull a straight arm across your chest with the other hand.' },
+      { name:'Lat stretch on rail/ledge', sub:'30 sec each side', cue:'Hold a rail or ledge, sink your hips back, let your chest drop.' }
+    ]}
+  ];
+
+  // ---------- Helpers ----------
+  function el(sel){ return document.querySelector(sel); }
+  function formatTime(s){
+    s = Math.max(0, s);
+    const m = Math.floor(s/60), sec = s%60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+  function dotsHtml(n){
+    let s = '';
+    for(let i=0;i<n;i++) s += '<span class="dot" data-i="'+i+'"></span>';
+    return s;
+  }
+
+  // ---------- Audio / vibration ----------
+  let audioCtx = null;
+  function ensureAudio(){
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      if(!audioCtx) audioCtx = new Ctx();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+    }catch(e){}
+  }
+  function beep(freq, ms){
+    freq = freq || 880; ms = ms || 150;
+    if(!audioCtx) return;
+    try{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + ms/1000);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + ms/1000 + 0.02);
+    }catch(e){}
+  }
+  function vibrate(ms){
+    try{ if(navigator.vibrate) navigator.vibrate(ms || 200); }catch(e){}
+  }
+
+  // ---------- Generic countdown (rest timer / stretch timer) ----------
+  let activeTimer = null;
+  function stopActiveTimer(){
+    if(activeTimer){ clearInterval(activeTimer.intervalId); activeTimer = null; }
+  }
+  function runCountdown(seconds, tickCb, doneCb){
+    stopActiveTimer();
+    let remaining = seconds;
+    tickCb(remaining);
+    activeTimer = { intervalId: setInterval(function(){
+      remaining--;
+      if(remaining <= 0){
+        stopActiveTimer();
+        beep(880, 200); vibrate(200);
+        tickCb(0);
+        if(doneCb) doneCb();
+        return;
+      }
+      tickCb(remaining);
+    }, 1000) };
+  }
+
+  // ---------- Step timer (circuit / EMOM) ----------
+  let timerState = null;
+
+  function buildCircuitSteps(day){
+    const steps = [];
+    for(let r=1; r<=day.rounds; r++){
+      day.items.forEach(function(ex, i){
+        steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:day.work, round:r, index:i });
+        const isLast = (r === day.rounds && i === day.items.length - 1);
+        if(!isLast){
+          const next = day.items[(i+1) % day.items.length];
+          steps.push({ phase:'rest', name:'Rest', sub:'Next: ' + next.name, dur:day.rest, round:r, index:i });
+        }
+      });
+    }
+    return steps;
+  }
+  function buildEmomSteps(day){
+    const steps = [];
+    for(let m=0; m<day.minutes; m++){
+      const ex = day.items[m % day.items.length];
+      const round = Math.floor(m / day.items.length) + 1;
+      steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:60, round:round, index:m % day.items.length });
+    }
+    return steps;
+  }
+
+  function initTimer(steps){
+    stopActiveTimer();
+    timerState = { steps:steps, stepIdx:0, remaining:steps[0].dur, running:false };
+    updateNowPanel();
+  }
+  function updateNowPanel(){
+    if(!timerState) return;
+    const labelEl = el('#now-label');
+    if(!labelEl) return;
+    const step = timerState.steps[timerState.stepIdx];
+    const timeEl = el('#now-time');
+    const subEl = el('#now-sub');
+    const panel = el('#now-panel');
+    labelEl.textContent = step.phase === 'work' ? step.name : 'Rest';
+    timeEl.textContent = formatTime(timerState.remaining);
+    subEl.textContent = step.sub;
+    panel.classList.toggle('phase-work', step.phase === 'work');
+    panel.classList.toggle('phase-rest', step.phase === 'rest');
+    updateDots(step.round);
+    highlightCurrentExercise(step);
+  }
+  function updateDots(currentRound){
+    document.querySelectorAll('#round-dots .dot').forEach(function(d, i){
+      d.classList.toggle('filled', i < currentRound - 1);
+      d.classList.toggle('active', i === currentRound - 1);
+    });
+  }
+  function fillAllDots(){
+    document.querySelectorAll('#round-dots .dot').forEach(function(d){ d.classList.add('filled'); d.classList.remove('active'); });
+  }
+  function highlightCurrentExercise(step){
+    document.querySelectorAll('.exitem[data-idx]').forEach(function(li){
+      li.classList.toggle('current', Number(li.dataset.idx) === step.index && step.phase === 'work');
+    });
+  }
+  function tick(){
+    if(!timerState || !timerState.running) return;
+    timerState.remaining -= 1;
+    if(timerState.remaining <= 0){
+      beep(880, 150); vibrate(150);
+      timerState.stepIdx++;
+      if(timerState.stepIdx >= timerState.steps.length){
+        stopActiveTimer();
+        timerState.running = false;
+        beep(1046, 300); vibrate([200,100,200]);
+        const labelEl = el('#now-label'), timeEl = el('#now-time'), subEl = el('#now-sub');
+        if(labelEl){ labelEl.textContent = 'Done'; timeEl.textContent = '00:00'; subEl.textContent = 'Nice work'; }
+        fillAllDots();
+        const btnStart = el('#btn-start'), btnPause = el('#btn-pause');
+        if(btnStart){ btnStart.disabled = true; }
+        if(btnPause){ btnPause.disabled = true; }
+        return;
+      }
+      timerState.remaining = timerState.steps[timerState.stepIdx].dur;
+    }
+    updateNowPanel();
+  }
+  function startTimer(){
+    if(!timerState) return;
+    timerState.running = true;
+    el('#btn-start').disabled = true;
+    el('#btn-pause').disabled = false;
+    stopActiveTimer();
+    activeTimer = { intervalId: setInterval(tick, 1000) };
+  }
+  function pauseTimer(){
+    if(!timerState) return;
+    timerState.running = false;
+    stopActiveTimer();
+    const btnStart = el('#btn-start'), btnPause = el('#btn-pause');
+    if(btnStart) btnStart.disabled = false;
+    if(btnPause) btnPause.disabled = true;
+  }
+  function attachStepTimerHandlers(day, buildStepsFn){
+    let steps = buildStepsFn(day);
+    initTimer(steps);
+    el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
+    el('#btn-pause').onclick = function(){ pauseTimer(); };
+    el('#btn-reset').onclick = function(){
+      pauseTimer();
+      steps = buildStepsFn(day);
+      initTimer(steps);
+      el('#btn-start').disabled = false;
+      el('#btn-pause').disabled = true;
+    };
+  }
+
+  // ---------- Day 3 complex handlers ----------
+  function attachComplexHandlers(day){
+    let round = 1;
+    const total = day.rounds;
+    function renderRoundText(){ el('#round-text').textContent = 'Round ' + Math.min(round, total) + ' of ' + total; }
+    function updateComplexDots(){
+      document.querySelectorAll('#round-dots .dot').forEach(function(d, i){
+        d.classList.toggle('filled', i < round - 1);
+        d.classList.toggle('active', i === round - 1 && round <= total);
+      });
+    }
+    renderRoundText(); updateComplexDots();
+    const btnComplete = el('#btn-complete'), btnSkip = el('#btn-skip'), restDisplay = el('#rest-display');
+
+    btnComplete.onclick = function(){
+      ensureAudio();
+      if(round > total) return;
+      beep(1046, 200); vibrate(150);
+      round++;
+      updateComplexDots();
+      if(round > total){
+        renderRoundText();
+        el('#round-text').textContent = 'Complex complete';
+        restDisplay.textContent = 'Nice work';
+        btnComplete.disabled = true; btnSkip.disabled = true;
+        return;
+      }
+      renderRoundText();
+      runCountdown(day.restBetween, function(s){
+        restDisplay.textContent = s > 0 ? 'Rest ' + formatTime(s) : 'Go!';
+      }, function(){});
+    };
+    btnSkip.onclick = function(){ stopActiveTimer(); restDisplay.textContent = 'Go!'; };
+  }
+
+  // ---------- Cooldown stretch handlers ----------
+  function attachStretchHandlers(day){
+    day.items.forEach(function(it, i){
+      const btn = el('#stretch-btn-' + i);
+      const chip = el('#stretch-time-' + i);
+      btn.onclick = function(){
+        ensureAudio();
+        btn.disabled = true;
+        runCountdown(30, function(s){ chip.textContent = s > 0 ? formatTime(s) : 'Done'; }, function(){ btn.disabled = false; });
+      };
+    });
+  }
+
+  // ---------- Renderers ----------
+  function renderList(day){
+    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<ul class="exlist checklist">' + day.items.map(function(it){
+        return '<li class="exitem">' +
+          '<label class="checkline"><input type="checkbox" /><span class="exname">' + it.name + '</span></label>' +
+          '<div class="exsub">' + it.sub + '</div>' +
+          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
+  function renderStretch(day){
+    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<ul class="exlist checklist">' + day.items.map(function(it, i){
+        return '<li class="exitem">' +
+          '<div class="stretch-row">' +
+            '<div><div class="exname">' + it.name + '</div><div class="exsub" style="margin-left:0">' + it.sub + '</div></div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="timer-chip" id="stretch-time-' + i + '"></span>' +
+              '<button class="btn btn-secondary" id="stretch-btn-' + i + '">Start 30s</button>' +
+            '</div>' +
+          '</div>' +
+          '<details class="cue" style="margin-left:0"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
+  function renderCircuit(day){
+    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info">' + day.rounds + ' rounds · <b>' + day.work + 's work</b> / ' + day.rest + 's rest</div>' +
+      '<div class="tip">Finish early? Strength moves: resting is fine. Cardio moves: add reps or slow down to fill the time.</div>' +
+      '<div class="now" id="now-panel">' +
+        '<div class="now-label" id="now-label">Ready</div>' +
+        '<div class="now-time" id="now-time">00:00</div>' +
+        '<div class="now-sub" id="now-sub"></div>' +
+        '<div class="dots" id="round-dots">' + dotsHtml(day.rounds) + '</div>' +
+        '<div class="controls">' +
+          '<button class="btn btn-primary" id="btn-start">Start</button>' +
+          '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
+          '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
+        '</div>' +
+      '</div>' +
+      '<ul class="exlist">' + day.items.map(function(it, i){
+        return '<li class="exitem" data-idx="' + i + '">' +
+          '<div class="exname">' + it.name + '</div>' +
+          '<div class="exsub">' + it.sub + '</div>' +
+          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
+  function renderEmom(day){
+    const cycleTotal = Math.ceil(day.minutes / day.items.length);
+    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info">' + day.minutes + ' min EMOM · cycle: ' + day.items.map(function(it){ return it.name; }).join(' \u2192 ') + '</div>' +
+      '<div class="tip">Finish early? Add reps or slow the tempo — keep moving until the minute is up.</div>' +
+      '<div class="now" id="now-panel">' +
+        '<div class="now-label" id="now-label">Ready</div>' +
+        '<div class="now-time" id="now-time">00:00</div>' +
+        '<div class="now-sub" id="now-sub"></div>' +
+        '<div class="dots" id="round-dots">' + dotsHtml(cycleTotal) + '</div>' +
+        '<div class="controls">' +
+          '<button class="btn btn-primary" id="btn-start">Start</button>' +
+          '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
+          '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
+        '</div>' +
+      '</div>' +
+      '<ul class="exlist">' + day.items.map(function(it, i){
+        return '<li class="exitem" data-idx="' + i + '">' +
+          '<div class="exname">' + it.name + '</div>' +
+          '<div class="exsub">' + it.sub + '</div>' +
+          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
+  function renderComplex(day){
+    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info"><b>' + day.weight + '</b> · ' + day.reps + '</div>' +
+      '<ol class="seqlist">' + day.sequence.map(function(s, i){
+        return '<li class="seqitem"><span class="seqnum">' + (i+1) + '.</span><span><b>' + s.name + '</b> — ' + s.cue + '</span></li>';
+      }).join('') + '</ol>' +
+      '<div class="now" id="now-panel">' +
+        '<div class="now-label" id="round-text">Round 1 of ' + day.rounds + '</div>' +
+        '<div class="now-sub" id="rest-display">Rest ' + day.restBetween + 's between rounds</div>' +
+        '<div class="dots" id="round-dots">' + dotsHtml(day.rounds) + '</div>' +
+        '<div class="controls">' +
+          '<button class="btn btn-primary" id="btn-complete">Complete round</button>' +
+          '<button class="btn btn-secondary" id="btn-skip">Skip rest</button>' +
+        '</div>' +
+      '</div></section>';
+  }
+
+  // ---------- Tab control ----------
+  let currentTab = null;
+  function selectTab(id){
+    stopActiveTimer();
+    timerState = null;
+    currentTab = id;
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab === id); });
+    const day = DAYS.find(function(d){ return d.id === id; });
+    const content = el('#content');
+    if(day.type === 'list'){ content.innerHTML = renderList(day); }
+    else if(day.type === 'stretch'){ content.innerHTML = renderStretch(day); attachStretchHandlers(day); }
+    else if(day.type === 'circuit'){ content.innerHTML = renderCircuit(day); attachStepTimerHandlers(day, buildCircuitSteps); }
+    else if(day.type === 'emom'){ content.innerHTML = renderEmom(day); attachStepTimerHandlers(day, buildEmomSteps); }
+    else if(day.type === 'complex'){ content.innerHTML = renderComplex(day); attachComplexHandlers(day); }
+    window.scrollTo(0,0);
+  }
+
+  // ---------- Init ----------
+  document.addEventListener('DOMContentLoaded', function(){
+    const tabsEl = el('#tabs');
+    tabsEl.innerHTML = DAYS.map(function(d){ return '<button class="tab" data-tab="' + d.id + '">' + d.title + '</button>'; }).join('');
+    document.querySelectorAll('.tab').forEach(function(t){
+      t.addEventListener('click', function(){ selectTab(t.dataset.tab); });
+    });
+    selectTab(DAYS[0].id);
+  });
+</script>
+</body>
+</html>
