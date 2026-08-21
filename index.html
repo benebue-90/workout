@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="theme-color" content="#ECEEE8" />
 <title>Terrace Kettlebell Workout</title>
 <style>
@@ -14,9 +15,9 @@
     --muted:#6B6F68;
     --line:#D8D3C4;
     --work:#B23A20;
+    --trans:#B8892B;
     --rest:#3B6E71;
     --accent:#B8892B;
-    --radius:14px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
@@ -33,23 +34,26 @@
     padding:9px 14px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;}
   .tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink);}
   main{flex:1;padding:16px 16px 40px;}
-  h1{font-size:clamp(22px,7vw,28px);font-weight:800;letter-spacing:.01em;margin:4px 0 2px;text-transform:uppercase;}
-  .subtitle{color:var(--muted);font-weight:600;margin:0 0 16px;font-size:14px;}
+  h1{font-size:clamp(22px,7vw,28px);font-weight:800;margin:4px 0 2px;text-transform:uppercase;letter-spacing:.01em;}
+  .subtitle{color:var(--muted);font-weight:600;margin:0 0 14px;font-size:14px;}
   .info{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
-    margin-bottom:14px;font-size:14px;font-weight:600;color:var(--muted);}
+    margin-bottom:10px;font-size:14px;font-weight:600;color:var(--muted);}
   .info b{color:var(--ink);}
-  .tip{font-size:12px;color:var(--muted);font-style:italic;margin:-6px 0 14px;}
-  .now{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+  .tip{font-size:12px;color:var(--muted);font-style:italic;margin:0 0 14px;}
+  .now{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
     margin-bottom:18px;text-align:center;transition:border-color .15s ease;}
   .now.phase-work{border-color:var(--work);}
+  .now.phase-transition{border-color:var(--trans);}
   .now.phase-rest{border-color:var(--rest);}
   .now-label{font-size:clamp(17px,6vw,21px);font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
   .now-time{font-size:clamp(42px,16vw,64px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin:4px 0;}
   .now.phase-work .now-time{color:var(--work);}
+  .now.phase-transition .now-time{color:var(--trans);}
   .now.phase-rest .now-time{color:var(--rest);}
   .now-sub{color:var(--muted);font-weight:600;font-size:14px;min-height:18px;}
   .dots{display:flex;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap;}
-  .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:transparent;transition:background-color .15s ease,border-color .15s ease;}
+  .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:transparent;
+    transition:background-color .15s ease,border-color .15s ease;}
   .dot.filled{background:var(--accent);border-color:var(--accent);}
   .dot.active{border-color:var(--work);}
   .controls{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
@@ -65,13 +69,13 @@
   .checkline input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--ink);}
   .exname{font-weight:700;font-size:16px;}
   input:checked + .exname{opacity:.45;text-decoration:line-through;}
-  .exsub{color:var(--muted);font-size:13px;margin:4px 0 4px 0;font-weight:600;}
-  .checklist .exsub, .checklist .cue{margin-left:30px;}
-  .cue{margin-left:0;margin-top:4px;}
+  .exsub{color:var(--muted);font-size:13px;margin:4px 0;font-weight:600;}
+  .checklist .exsub{margin-left:30px;}
   .cue summary{color:var(--rest);font-weight:700;font-size:12px;text-transform:uppercase;
     letter-spacing:.04em;cursor:pointer;list-style:none;}
   .cue summary::-webkit-details-marker{display:none;}
   .cue p{margin:6px 0 0;font-size:14px;color:var(--ink);}
+  .checklist .cue{margin-left:30px;}
   .seqlist{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:8px;}
   .seqitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;
     display:flex;align-items:baseline;gap:8px;font-size:14px;}
@@ -90,12 +94,16 @@
     <div class="tabs" id="tabs"></div>
   </header>
   <main id="content"></main>
-  <footer class="note">Tap Start on circuit/EMOM days — sound and a short vibration mark each change.</footer>
+  <footer class="note">Turn Silent Mode off for beeps. Vibration works either way.</footer>
 </div>
 
 <script>
+  // ---------- Config ----------
+  var TRANSITION = 10;   // seconds between exercises in continuous mode
+  var ROUND_REST = 60;   // seconds rest at the end of a continuous round
+
   // ---------- Data ----------
-  const DAYS = [
+  var DAYS = [
     { id:'warmup', type:'list', title:'Warm-up', subtitle:'~4 min, every session', items:[
       { name:'Arm circles', sub:'20 sec each direction', cue:'Small circles, gradually bigger, then reverse direction.' },
       { name:'Kettlebell halos', sub:'8 kg — 10 each way', cue:'Hold the horns at chest height, circle it around your head, brace your core.' },
@@ -103,20 +111,29 @@
       { name:'Inchworm walkout', sub:'8 reps (alt: Cat-Cow, 10 reps)', cue:'Hinge, walk your hands out to a plank, walk back, stand up.' },
       { name:'Shoulder pass-throughs', sub:'10 reps', cue:'Swing straight arms up and back overhead in a wide arc.' }
     ]},
-    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20, items:[
-      { name:'Goblet push press', sub:'8 kg — 8 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
-      { name:'Push-ups', sub:'12 reps', cue:'Straight line head to heels, elbows about 45° from your body.' },
-      { name:'KB swings', sub:'12 kg — 15 reps · cardio', cue:'Hip hinge and snap — not a squat. Let the bell float, don\u2019t lift it with your arms.' },
-      { name:'Floor press, alternating', sub:'12 kg — 8/side', cue:'Lying on your back, press one arm up, lower with control, switch.' }
-    ]},
-    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20, items:[
-      { name:'Bent-over row — underhand', sub:'12 kg — 10/side', cue:'Palm facing forward, not toward you. Flat-back hinge, elbow close to your ribs — the underhand grip brings the biceps in.' },
-      { name:'Bird-dog row', sub:'8 kg — 8/side', cue:'Hands and knees, row one arm up while extending the opposite leg straight back.' },
-      { name:'High pulls', sub:'12 kg — 12 reps · cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading.' },
-      { name:'KB curl, single arm', sub:'8 kg — 10/side (12 kg once strict)', cue:'Elbow pinned at your ribs, no torso swing. Lower slowly — that half builds the most.' }
-    ]},
-    { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:4, restBetween:75,
-      weight:'Single KB — start 8 kg, progress to 12 kg', reps:'6 reps each move, then switch sides',
+
+    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20,
+      items:[
+        { name:'Goblet push press', sub:'8 kg — 8 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
+        { name:'Push-ups', sub:'12 reps', cue:'Straight line head to heels, elbows about 45\u00B0 from your body.' },
+        { name:'KB swings', sub:'12 kg \u2014 15 reps \u00B7 cardio', cue:'Hip hinge and snap \u2014 not a squat. Let the bell float, don\u2019t lift it with your arms.' },
+        { name:'Floor press, alternating', sub:'12 kg — 8/side', cue:'Lying on your back, press one arm up, lower with control, switch.' }
+      ],
+      finisher:{ name:'Swing finisher', sub:'12 kg \u00B7 30s on / 30s off \u00D7 3', work:30, rest:30, sets:3,
+        cue:'Max clean reps in 30s. This is the bit that should leave you breathing hard.' }
+    },
+
+    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20,
+      items:[
+        { name:'Bent-over row \u2014 underhand', sub:'12 kg — 10/side', cue:'Palm facing forward, not toward you. Flat-back hinge, elbow close to your ribs \u2014 the underhand grip brings the biceps in.' },
+        { name:'Bird-dog row', sub:'8 kg — 8/side', cue:'Hands and knees, row one arm up while extending the opposite leg straight back.' },
+        { name:'High pulls', sub:'12 kg \u2014 12 reps \u00B7 cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading.' },
+        { name:'KB curl, single arm', sub:'8 kg — 10/side (12 kg once strict)', cue:'Elbow pinned at your ribs, no torso swing. Lower slowly \u2014 that half builds the most.' }
+      ]
+    },
+
+    { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:5, restBetween:45,
+      weight:'Single KB \u2014 start 8 kg, progress to 12 kg', reps:'6 reps each move, then switch sides',
       sequence:[
         { name:'Clean', cue:'Swing the bell up from between your legs, catch it in the rack position.' },
         { name:'Press', cue:'Drive the bell straight overhead from the rack position.' },
@@ -124,19 +141,25 @@
         { name:'Swing', cue:'Hip hinge and snap the bell up to chest height.' }
       ]
     },
-    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Push/Pull Combo + Core', rounds:4, work:40, rest:20, items:[
-      { name:'Thrusters', sub:'12 kg — 10 reps', cue:'Goblet squat into an overhead press, driven by the legs.' },
-      { name:'Single-arm row', sub:'12 kg — 10/side', cue:'Hinge, row one side, control the lowering.' },
-      { name:'Plank', sub:'30–45 sec', cue:'Straight line, brace core, squeeze glutes.' },
-      { name:'KB snatch', sub:'8 kg — 6/side · cardio', cue:'Swing back, snap the hips, punch your hand through overhead.' },
-      { name:'Curl finisher (optional)', sub:'8 kg — 2 × 12/side, 3 sec lowering', cue:'After the rounds. Slow lowering makes the lighter bell bite — skip if short on time.' }
-    ]},
-    { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine · EMOM', minutes:18, items:[
-      { name:'KB swings', sub:'12 kg — 15 reps', cue:'Hip hinge and snap — not a squat.' },
+
+    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Push/Pull Combo + Core', rounds:4, work:40, rest:20,
+      items:[
+        { name:'Thrusters', sub:'12 kg — 10 reps', cue:'Goblet squat into an overhead press, driven by the legs.' },
+        { name:'Single-arm row', sub:'12 kg — 10/side', cue:'Hinge, row one side, control the lowering.' },
+        { name:'Plank', sub:'30–45 sec', cue:'Straight line, brace core, squeeze glutes.' },
+        { name:'KB snatch', sub:'8 kg \u2014 6/side \u00B7 cardio', cue:'Swing back, snap the hips, punch your hand through overhead.' }
+      ],
+      finisher:{ name:'Curl finisher', sub:'8 kg \u00B7 40s on / 20s off \u00D7 2', work:40, rest:20, sets:2,
+        cue:'Slow 3-second lowering on every rep. Alternate sides as you fatigue.' }
+    },
+
+    { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine \u00B7 EMOM', minutes:18, items:[
+      { name:'KB swings', sub:'12 kg — 15 reps', cue:'Hip hinge and snap \u2014 not a squat.' },
       { name:'Push-ups', sub:'10 reps', cue:'Straight line head to heels.' },
       { name:'KB snatch', sub:'8 kg — 6/side', cue:'Swing back, snap the hips, punch your hand through overhead.' }
     ]},
-    { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2–3 min, every session', items:[
+
+    { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2\u20133 min, every session', items:[
       { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
       { name:'Cross-body shoulder stretch', sub:'30 sec each side', cue:'Pull a straight arm across your chest with the other hand.' },
       { name:'Lat stretch on rail/ledge', sub:'30 sec each side', cue:'Hold a rail or ledge, sink your hips back, let your chest drop.' }
@@ -147,20 +170,21 @@
   function el(sel){ return document.querySelector(sel); }
   function formatTime(s){
     s = Math.max(0, s);
-    const m = Math.floor(s/60), sec = s%60;
+    var m = Math.floor(s/60), sec = s % 60;
     return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   }
   function dotsHtml(n){
-    let s = '';
-    for(let i=0;i<n;i++) s += '<span class="dot" data-i="'+i+'"></span>';
+    var s = '';
+    for(var i=0;i<n;i++) s += '<span class="dot" data-i="' + i + '"></span>';
     return s;
   }
+  function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // ---------- Audio / vibration ----------
-  let audioCtx = null;
+  var audioCtx = null;
   function ensureAudio(){
     try{
-      const Ctx = window.AudioContext || window.webkitAudioContext;
+      var Ctx = window.AudioContext || window.webkitAudioContext;
       if(!Ctx) return;
       if(!audioCtx) audioCtx = new Ctx();
       if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -170,8 +194,8 @@
     freq = freq || 880; ms = ms || 150;
     if(!audioCtx) return;
     try{
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
       o.type = 'sine';
       o.frequency.value = freq;
       g.gain.setValueAtTime(0.001, audioCtx.currentTime);
@@ -182,18 +206,16 @@
       o.stop(audioCtx.currentTime + ms/1000 + 0.02);
     }catch(e){}
   }
-  function vibrate(ms){
-    try{ if(navigator.vibrate) navigator.vibrate(ms || 200); }catch(e){}
-  }
+  function vibrate(p){ try{ if(navigator.vibrate) navigator.vibrate(p || 200); }catch(e){} }
 
-  // ---------- Generic countdown (rest timer / stretch timer) ----------
-  let activeTimer = null;
+  // ---------- Generic countdown ----------
+  var activeTimer = null;
   function stopActiveTimer(){
     if(activeTimer){ clearInterval(activeTimer.intervalId); activeTimer = null; }
   }
   function runCountdown(seconds, tickCb, doneCb){
     stopActiveTimer();
-    let remaining = seconds;
+    var remaining = seconds;
     tickCb(remaining);
     activeTimer = { intervalId: setInterval(function(){
       remaining--;
@@ -208,86 +230,147 @@
     }, 1000) };
   }
 
-  // ---------- Step timer (circuit / EMOM) ----------
-  let timerState = null;
-
-  function buildCircuitSteps(day){
-    const steps = [];
-    for(let r=1; r<=day.rounds; r++){
-      day.items.forEach(function(ex, i){
+  // ---------- Step building ----------
+  // Continuous: exercises back-to-back with short transitions, one long rest per round.
+  function buildContinuousSteps(day){
+    var steps = [];
+    for(var r=1; r<=day.rounds; r++){
+      for(var i=0;i<day.items.length;i++){
+        var ex = day.items[i];
         steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:day.work, round:r, index:i });
-        const isLast = (r === day.rounds && i === day.items.length - 1);
-        if(!isLast){
-          const next = day.items[(i+1) % day.items.length];
-          steps.push({ phase:'rest', name:'Rest', sub:'Next: ' + next.name, dur:day.rest, round:r, index:i });
+        if(i < day.items.length - 1){
+          steps.push({ phase:'transition', name:'Switch', sub:'Next: ' + day.items[i+1].name,
+                       dur:TRANSITION, round:r, index:i });
         }
-      });
+      }
+      if(r < day.rounds){
+        steps.push({ phase:'rest', name:'Round rest', sub:'Next: ' + day.items[0].name,
+                     dur:ROUND_REST, round:r, index:-1 });
+      }
     }
+    if(day.finisher) appendFinisher(steps, day);
     return steps;
   }
+
+  // Intervals: 40s work / 20s rest after every exercise.
+  // UNUSED — kept so intervals can be restored by calling this from circuitSteps().
+  function buildIntervalSteps(day){
+    var steps = [];
+    for(var r=1; r<=day.rounds; r++){
+      for(var i=0;i<day.items.length;i++){
+        var ex = day.items[i];
+        steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:day.work, round:r, index:i });
+        var isLast = (r === day.rounds && i === day.items.length - 1);
+        if(!isLast){
+          var next = day.items[(i+1) % day.items.length];
+          steps.push({ phase:'rest', name:'Rest', sub:'Next: ' + next.name,
+                       dur:day.rest, round:r, index:i });
+        }
+      }
+    }
+    if(day.finisher) appendFinisher(steps, day);
+    return steps;
+  }
+
+  function appendFinisher(steps, day){
+    var f = day.finisher;
+    steps.push({ phase:'rest', name:'Finisher next', sub:f.name, dur:ROUND_REST, round:day.rounds, index:-1 });
+    for(var s=1; s<=f.sets; s++){
+      steps.push({ phase:'work', name:f.name, sub:'Set ' + s + ' of ' + f.sets + ' \u00B7 ' + f.sub,
+                   dur:f.work, round:day.rounds, index:-1 });
+      if(s < f.sets){
+        steps.push({ phase:'rest', name:'Rest', sub:'Finisher set ' + (s+1) + ' of ' + f.sets,
+                     dur:f.rest, round:day.rounds, index:-1 });
+      }
+    }
+  }
+
   function buildEmomSteps(day){
-    const steps = [];
-    for(let m=0; m<day.minutes; m++){
-      const ex = day.items[m % day.items.length];
-      const round = Math.floor(m / day.items.length) + 1;
-      steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:60, round:round, index:m % day.items.length });
+    var steps = [];
+    for(var m=0; m<day.minutes; m++){
+      var ex = day.items[m % day.items.length];
+      steps.push({ phase:'work', name:ex.name, sub:ex.sub, dur:60,
+                   round: Math.floor(m / day.items.length) + 1, index: m % day.items.length });
     }
     return steps;
   }
+
+  function estimateMinutes(steps){
+    var total = 0;
+    for(var i=0;i<steps.length;i++) total += steps[i].dur;
+    return Math.round(total / 60);
+  }
+
+  // ---------- Step timer ----------
+  var timerState = null;
 
   function initTimer(steps){
     stopActiveTimer();
     timerState = { steps:steps, stepIdx:0, remaining:steps[0].dur, running:false };
+    var bs = el('#btn-start'), bp = el('#btn-pause');
+    if(bs) bs.disabled = false;
+    if(bp) bp.disabled = true;
     updateNowPanel();
   }
   function updateNowPanel(){
     if(!timerState) return;
-    const labelEl = el('#now-label');
+    var labelEl = el('#now-label');
     if(!labelEl) return;
-    const step = timerState.steps[timerState.stepIdx];
-    const timeEl = el('#now-time');
-    const subEl = el('#now-sub');
-    const panel = el('#now-panel');
-    labelEl.textContent = step.phase === 'work' ? step.name : 'Rest';
-    timeEl.textContent = formatTime(timerState.remaining);
-    subEl.textContent = step.sub;
+    var step = timerState.steps[timerState.stepIdx];
+    el('#now-time').textContent = formatTime(timerState.remaining);
+    el('#now-sub').textContent = step.sub;
+    labelEl.textContent = step.name;
+    var panel = el('#now-panel');
     panel.classList.toggle('phase-work', step.phase === 'work');
+    panel.classList.toggle('phase-transition', step.phase === 'transition');
     panel.classList.toggle('phase-rest', step.phase === 'rest');
     updateDots(step.round);
     highlightCurrentExercise(step);
   }
   function updateDots(currentRound){
-    document.querySelectorAll('#round-dots .dot').forEach(function(d, i){
-      d.classList.toggle('filled', i < currentRound - 1);
-      d.classList.toggle('active', i === currentRound - 1);
-    });
+    var dots = document.querySelectorAll('#round-dots .dot');
+    for(var i=0;i<dots.length;i++){
+      dots[i].classList.toggle('filled', i < currentRound - 1);
+      dots[i].classList.toggle('active', i === currentRound - 1);
+    }
   }
   function fillAllDots(){
-    document.querySelectorAll('#round-dots .dot').forEach(function(d){ d.classList.add('filled'); d.classList.remove('active'); });
+    var dots = document.querySelectorAll('#round-dots .dot');
+    for(var i=0;i<dots.length;i++){ dots[i].classList.add('filled'); dots[i].classList.remove('active'); }
   }
   function highlightCurrentExercise(step){
-    document.querySelectorAll('.exitem[data-idx]').forEach(function(li){
-      li.classList.toggle('current', Number(li.dataset.idx) === step.index && step.phase === 'work');
-    });
+    var items = document.querySelectorAll('.exitem[data-idx]');
+    for(var i=0;i<items.length;i++){
+      items[i].classList.toggle('current',
+        Number(items[i].dataset.idx) === step.index && step.phase === 'work');
+    }
   }
   function tick(){
     if(!timerState || !timerState.running) return;
     timerState.remaining -= 1;
+
+    if(timerState.remaining === 3 && timerState.steps[timerState.stepIdx].phase !== 'work'){
+      beep(660, 90); // short heads-up before work resumes
+    }
     if(timerState.remaining <= 0){
-      beep(880, 150); vibrate(150);
+      var finishedPhase = timerState.steps[timerState.stepIdx].phase;
       timerState.stepIdx++;
       if(timerState.stepIdx >= timerState.steps.length){
         stopActiveTimer();
         timerState.running = false;
-        beep(1046, 300); vibrate([200,100,200]);
-        const labelEl = el('#now-label'), timeEl = el('#now-time'), subEl = el('#now-sub');
-        if(labelEl){ labelEl.textContent = 'Done'; timeEl.textContent = '00:00'; subEl.textContent = 'Nice work'; }
+        beep(1046, 320); vibrate([200,100,200]);
+        el('#now-label').textContent = 'Done';
+        el('#now-time').textContent = '00:00';
+        el('#now-sub').textContent = 'Nice work';
+        el('#now-panel').classList.remove('phase-work','phase-transition','phase-rest');
         fillAllDots();
-        const btnStart = el('#btn-start'), btnPause = el('#btn-pause');
-        if(btnStart){ btnStart.disabled = true; }
-        if(btnPause){ btnPause.disabled = true; }
+        el('#btn-start').disabled = true;
+        el('#btn-pause').disabled = true;
         return;
       }
+      var nextPhase = timerState.steps[timerState.stepIdx].phase;
+      if(nextPhase === 'work'){ beep(950, 180); vibrate(200); }
+      else if(finishedPhase === 'work'){ beep(760, 140); vibrate(120); }
       timerState.remaining = timerState.steps[timerState.stepIdx].dur;
     }
     updateNowPanel();
@@ -304,37 +387,56 @@
     if(!timerState) return;
     timerState.running = false;
     stopActiveTimer();
-    const btnStart = el('#btn-start'), btnPause = el('#btn-pause');
-    if(btnStart) btnStart.disabled = false;
-    if(btnPause) btnPause.disabled = true;
-  }
-  function attachStepTimerHandlers(day, buildStepsFn){
-    let steps = buildStepsFn(day);
-    initTimer(steps);
-    el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
-    el('#btn-pause').onclick = function(){ pauseTimer(); };
-    el('#btn-reset').onclick = function(){
-      pauseTimer();
-      steps = buildStepsFn(day);
-      initTimer(steps);
-      el('#btn-start').disabled = false;
-      el('#btn-pause').disabled = true;
-    };
+    var bs = el('#btn-start'), bp = el('#btn-pause');
+    if(bs) bs.disabled = false;
+    if(bp) bp.disabled = true;
   }
 
-  // ---------- Day 3 complex handlers ----------
+  // ---------- Circuit day wiring ----------
+  function circuitSteps(day){
+    return buildContinuousSteps(day);
+  }
+  function refreshCircuitMeta(day){
+    var steps = circuitSteps(day);
+    var metaEl = el('#mode-meta');
+    if(metaEl){
+      metaEl.innerHTML = day.rounds + ' rounds \u00B7 <b>' + day.work + 's per move, back-to-back</b> \u00B7 '
+        + TRANSITION + 's switch \u00B7 ' + ROUND_REST + 's rest between rounds \u00B7 ~'
+        + estimateMinutes(steps) + ' min';
+    }
+    return steps;
+  }
+  function attachCircuitHandlers(day){
+    initTimer(refreshCircuitMeta(day));
+
+    el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
+    el('#btn-pause').onclick = function(){ pauseTimer(); };
+    el('#btn-reset').onclick = function(){ pauseTimer(); initTimer(refreshCircuitMeta(day)); };
+  }
+
+  function attachEmomHandlers(day){
+    initTimer(buildEmomSteps(day));
+    el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
+    el('#btn-pause').onclick = function(){ pauseTimer(); };
+    el('#btn-reset').onclick = function(){ pauseTimer(); initTimer(buildEmomSteps(day)); };
+  }
+
+  // ---------- Day 3 complex ----------
   function attachComplexHandlers(day){
-    let round = 1;
-    const total = day.rounds;
-    function renderRoundText(){ el('#round-text').textContent = 'Round ' + Math.min(round, total) + ' of ' + total; }
+    var round = 1;
+    var total = day.rounds;
+    function renderRoundText(){
+      el('#round-text').textContent = round > total ? 'Complex complete' : 'Round ' + round + ' of ' + total;
+    }
     function updateComplexDots(){
-      document.querySelectorAll('#round-dots .dot').forEach(function(d, i){
-        d.classList.toggle('filled', i < round - 1);
-        d.classList.toggle('active', i === round - 1 && round <= total);
-      });
+      var dots = document.querySelectorAll('#round-dots .dot');
+      for(var i=0;i<dots.length;i++){
+        dots[i].classList.toggle('filled', i < round - 1);
+        dots[i].classList.toggle('active', i === round - 1 && round <= total);
+      }
     }
     renderRoundText(); updateComplexDots();
-    const btnComplete = el('#btn-complete'), btnSkip = el('#btn-skip'), restDisplay = el('#rest-display');
+    var btnComplete = el('#btn-complete'), btnSkip = el('#btn-skip'), restDisplay = el('#rest-display');
 
     btnComplete.onclick = function(){
       ensureAudio();
@@ -342,112 +444,86 @@
       beep(1046, 200); vibrate(150);
       round++;
       updateComplexDots();
+      renderRoundText();
       if(round > total){
-        renderRoundText();
-        el('#round-text').textContent = 'Complex complete';
         restDisplay.textContent = 'Nice work';
         btnComplete.disabled = true; btnSkip.disabled = true;
         return;
       }
-      renderRoundText();
       runCountdown(day.restBetween, function(s){
         restDisplay.textContent = s > 0 ? 'Rest ' + formatTime(s) : 'Go!';
-      }, function(){});
+      });
     };
     btnSkip.onclick = function(){ stopActiveTimer(); restDisplay.textContent = 'Go!'; };
   }
 
-  // ---------- Cooldown stretch handlers ----------
+  // ---------- Cooldown ----------
   function attachStretchHandlers(day){
     day.items.forEach(function(it, i){
-      const btn = el('#stretch-btn-' + i);
-      const chip = el('#stretch-time-' + i);
+      var btn = el('#stretch-btn-' + i);
+      var chip = el('#stretch-time-' + i);
       btn.onclick = function(){
         ensureAudio();
         btn.disabled = true;
-        runCountdown(30, function(s){ chip.textContent = s > 0 ? formatTime(s) : 'Done'; }, function(){ btn.disabled = false; });
+        runCountdown(30, function(s){ chip.textContent = s > 0 ? formatTime(s) : 'Done'; },
+                     function(){ btn.disabled = false; });
       };
     });
   }
 
   // ---------- Renderers ----------
-  function renderList(day){
-    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
-      '<ul class="exlist checklist">' + day.items.map(function(it){
-        return '<li class="exitem">' +
-          '<label class="checkline"><input type="checkbox" /><span class="exname">' + it.name + '</span></label>' +
-          '<div class="exsub">' + it.sub + '</div>' +
-          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
-        '</li>';
-      }).join('') + '</ul></section>';
+  function exListHtml(day){
+    var html = day.items.map(function(it, i){
+      return '<li class="exitem" data-idx="' + i + '">' +
+        '<div class="exname">' + esc(it.name) + '</div>' +
+        '<div class="exsub">' + esc(it.sub) + '</div>' +
+        '<details class="cue"><summary>Cue</summary><p>' + esc(it.cue) + '</p></details>' +
+      '</li>';
+    }).join('');
+    if(day.finisher){
+      html += '<li class="exitem">' +
+        '<div class="exname">' + esc(day.finisher.name) + '</div>' +
+        '<div class="exsub">' + esc(day.finisher.sub) + '</div>' +
+        '<details class="cue"><summary>Cue</summary><p>' + esc(day.finisher.cue) + '</p></details>' +
+      '</li>';
+    }
+    return '<ul class="exlist">' + html + '</ul>';
   }
-  function renderStretch(day){
-    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
-      '<ul class="exlist checklist">' + day.items.map(function(it, i){
-        return '<li class="exitem">' +
-          '<div class="stretch-row">' +
-            '<div><div class="exname">' + it.name + '</div><div class="exsub" style="margin-left:0">' + it.sub + '</div></div>' +
-            '<div style="display:flex;align-items:center;gap:8px;">' +
-              '<span class="timer-chip" id="stretch-time-' + i + '"></span>' +
-              '<button class="btn btn-secondary" id="stretch-btn-' + i + '">Start 30s</button>' +
-            '</div>' +
-          '</div>' +
-          '<details class="cue" style="margin-left:0"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
-        '</li>';
-      }).join('') + '</ul></section>';
+  function nowPanelHtml(dotCount){
+    return '<div class="now" id="now-panel">' +
+        '<div class="now-label" id="now-label">Ready</div>' +
+        '<div class="now-time" id="now-time">00:00</div>' +
+        '<div class="now-sub" id="now-sub"></div>' +
+        '<div class="dots" id="round-dots">' + dotsHtml(dotCount) + '</div>' +
+        '<div class="controls">' +
+          '<button class="btn btn-primary" id="btn-start">Start</button>' +
+          '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
+          '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
+        '</div>' +
+      '</div>';
   }
   function renderCircuit(day){
-    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
-      '<div class="info">' + day.rounds + ' rounds · <b>' + day.work + 's work</b> / ' + day.rest + 's rest</div>' +
-      '<div class="tip">Finish early? Strength moves: resting is fine. Cardio moves: add reps or slow down to fill the time.</div>' +
-      '<div class="now" id="now-panel">' +
-        '<div class="now-label" id="now-label">Ready</div>' +
-        '<div class="now-time" id="now-time">00:00</div>' +
-        '<div class="now-sub" id="now-sub"></div>' +
-        '<div class="dots" id="round-dots">' + dotsHtml(day.rounds) + '</div>' +
-        '<div class="controls">' +
-          '<button class="btn btn-primary" id="btn-start">Start</button>' +
-          '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
-          '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
-        '</div>' +
-      '</div>' +
-      '<ul class="exlist">' + day.items.map(function(it, i){
-        return '<li class="exitem" data-idx="' + i + '">' +
-          '<div class="exname">' + it.name + '</div>' +
-          '<div class="exsub">' + it.sub + '</div>' +
-          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
-        '</li>';
-      }).join('') + '</ul></section>';
+    return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info" id="mode-meta"></div>' +
+      '<div class="tip">Moves run back-to-back \u2014 the 10s switch is for grabbing the bell, not resting.</div>' +
+      nowPanelHtml(day.rounds) +
+      exListHtml(day) + '</section>';
   }
   function renderEmom(day){
-    const cycleTotal = Math.ceil(day.minutes / day.items.length);
-    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
-      '<div class="info">' + day.minutes + ' min EMOM · cycle: ' + day.items.map(function(it){ return it.name; }).join(' \u2192 ') + '</div>' +
-      '<div class="tip">Finish early? Add reps or slow the tempo — keep moving until the minute is up.</div>' +
-      '<div class="now" id="now-panel">' +
-        '<div class="now-label" id="now-label">Ready</div>' +
-        '<div class="now-time" id="now-time">00:00</div>' +
-        '<div class="now-sub" id="now-sub"></div>' +
-        '<div class="dots" id="round-dots">' + dotsHtml(cycleTotal) + '</div>' +
-        '<div class="controls">' +
-          '<button class="btn btn-primary" id="btn-start">Start</button>' +
-          '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
-          '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
-        '</div>' +
-      '</div>' +
-      '<ul class="exlist">' + day.items.map(function(it, i){
-        return '<li class="exitem" data-idx="' + i + '">' +
-          '<div class="exname">' + it.name + '</div>' +
-          '<div class="exsub">' + it.sub + '</div>' +
-          '<details class="cue"><summary>Cue</summary><p>' + it.cue + '</p></details>' +
-        '</li>';
-      }).join('') + '</ul></section>';
+    var cycleTotal = Math.ceil(day.minutes / day.items.length);
+    return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info">' + day.minutes + ' min EMOM \u00B7 cycle: ' +
+        day.items.map(function(it){ return esc(it.name); }).join(' \u2192 ') + '</div>' +
+      '<div class="tip">Finish the reps early? That rest is the point \u2014 but if you\u2019re getting 20s+ back every minute, add reps.</div>' +
+      nowPanelHtml(cycleTotal) +
+      exListHtml(day) + '</section>';
   }
   function renderComplex(day){
-    return '<section class="panel"><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
-      '<div class="info"><b>' + day.weight + '</b> · ' + day.reps + '</div>' +
+    return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<div class="info"><b>' + esc(day.weight) + '</b> \u00B7 ' + esc(day.reps) + '</div>' +
       '<ol class="seqlist">' + day.sequence.map(function(s, i){
-        return '<li class="seqitem"><span class="seqnum">' + (i+1) + '.</span><span><b>' + s.name + '</b> — ' + s.cue + '</span></li>';
+        return '<li class="seqitem"><span class="seqnum">' + (i+1) + '.</span><span><b>' +
+          esc(s.name) + '</b> \u2014 ' + esc(s.cue) + '</span></li>';
       }).join('') + '</ol>' +
       '<div class="now" id="now-panel">' +
         '<div class="now-label" id="round-text">Round 1 of ' + day.rounds + '</div>' +
@@ -459,31 +535,57 @@
         '</div>' +
       '</div></section>';
   }
+  function renderList(day){
+    return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<ul class="exlist checklist">' + day.items.map(function(it){
+        return '<li class="exitem">' +
+          '<label class="checkline"><input type="checkbox" /><span class="exname">' + esc(it.name) + '</span></label>' +
+          '<div class="exsub">' + esc(it.sub) + '</div>' +
+          '<details class="cue"><summary>Cue</summary><p>' + esc(it.cue) + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
+  function renderStretch(day){
+    return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
+      '<ul class="exlist">' + day.items.map(function(it, i){
+        return '<li class="exitem">' +
+          '<div class="stretch-row">' +
+            '<div><div class="exname">' + esc(it.name) + '</div>' +
+            '<div class="exsub">' + esc(it.sub) + '</div></div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="timer-chip" id="stretch-time-' + i + '"></span>' +
+              '<button class="btn btn-secondary" id="stretch-btn-' + i + '">Start 30s</button>' +
+            '</div>' +
+          '</div>' +
+          '<details class="cue"><summary>Cue</summary><p>' + esc(it.cue) + '</p></details>' +
+        '</li>';
+      }).join('') + '</ul></section>';
+  }
 
-  // ---------- Tab control ----------
-  let currentTab = null;
+  // ---------- Tabs ----------
   function selectTab(id){
     stopActiveTimer();
     timerState = null;
-    currentTab = id;
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab === id); });
-    const day = DAYS.find(function(d){ return d.id === id; });
-    const content = el('#content');
+    var tabs = document.querySelectorAll('.tab');
+    for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.tab === id);
+    var day = DAYS.filter(function(d){ return d.id === id; })[0];
+    var content = el('#content');
     if(day.type === 'list'){ content.innerHTML = renderList(day); }
     else if(day.type === 'stretch'){ content.innerHTML = renderStretch(day); attachStretchHandlers(day); }
-    else if(day.type === 'circuit'){ content.innerHTML = renderCircuit(day); attachStepTimerHandlers(day, buildCircuitSteps); }
-    else if(day.type === 'emom'){ content.innerHTML = renderEmom(day); attachStepTimerHandlers(day, buildEmomSteps); }
+    else if(day.type === 'circuit'){ content.innerHTML = renderCircuit(day); attachCircuitHandlers(day); }
+    else if(day.type === 'emom'){ content.innerHTML = renderEmom(day); attachEmomHandlers(day); }
     else if(day.type === 'complex'){ content.innerHTML = renderComplex(day); attachComplexHandlers(day); }
     window.scrollTo(0,0);
   }
 
-  // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', function(){
-    const tabsEl = el('#tabs');
-    tabsEl.innerHTML = DAYS.map(function(d){ return '<button class="tab" data-tab="' + d.id + '">' + d.title + '</button>'; }).join('');
-    document.querySelectorAll('.tab').forEach(function(t){
-      t.addEventListener('click', function(){ selectTab(t.dataset.tab); });
-    });
+    el('#tabs').innerHTML = DAYS.map(function(d){
+      return '<button class="tab" data-tab="' + d.id + '">' + d.title + '</button>';
+    }).join('');
+    var tabs = document.querySelectorAll('.tab');
+    for(var i=0;i<tabs.length;i++){
+      (function(t){ t.addEventListener('click', function(){ selectTab(t.dataset.tab); }); })(tabs[i]);
+    }
     selectTab(DAYS[0].id);
   });
 </script>
