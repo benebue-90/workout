@@ -247,7 +247,6 @@
                      dur:ROUND_REST, round:r, index:-1 });
       }
     }
-    if(day.finisher) appendFinisher(steps, day);
     return steps;
   }
 
@@ -267,23 +266,7 @@
         }
       }
     }
-    if(day.finisher) appendFinisher(steps, day);
     return steps;
-  }
-
-  // UNUSED — no day defines a finisher any more; every move is a regular circuit item.
-  // Kept so a day can bolt one on again just by adding a `finisher` field.
-  function appendFinisher(steps, day){
-    var f = day.finisher;
-    steps.push({ phase:'rest', name:'Finisher next', sub:f.name, dur:ROUND_REST, round:day.rounds, index:-1 });
-    for(var s=1; s<=f.sets; s++){
-      steps.push({ phase:'work', name:f.name, sub:'Set ' + s + ' of ' + f.sets + ' \u00B7 ' + f.sub,
-                   dur:f.work, round:day.rounds, index:-1 });
-      if(s < f.sets){
-        steps.push({ phase:'rest', name:'Rest', sub:'Finisher set ' + (s+1) + ' of ' + f.sets,
-                     dur:f.rest, round:day.rounds, index:-1 });
-      }
-    }
   }
 
   function buildEmomSteps(day){
@@ -490,13 +473,6 @@
         '<details class="cue"><summary>Cue</summary><p>' + esc(it.cue) + '</p></details>' +
       '</li>';
     }).join('');
-    if(day.finisher){
-      html += '<li class="exitem">' +
-        '<div class="exname">' + esc(day.finisher.name) + '</div>' +
-        '<div class="exsub">' + esc(day.finisher.sub) + '</div>' +
-        '<details class="cue"><summary>Cue</summary><p>' + esc(day.finisher.cue) + '</p></details>' +
-      '</li>';
-    }
     return '<ul class="exlist">' + html + '</ul>';
   }
   function nowPanelHtml(dotCount){
