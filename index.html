@@ -114,18 +114,18 @@
 
     { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20,
       items:[
-        { name:'Goblet push press', sub:'8 kg — 8 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
+        { name:'Goblet push press', sub:'12 kg — 8 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
         { name:'Push-ups', sub:'12 reps', cue:'Straight line head to heels, elbows about 45\u00B0 from your body.' },
         { name:'KB swings', sub:'12 kg \u2014 15 reps \u00B7 cardio', cue:'Hip hinge and snap \u2014 not a squat. Let the bell float, don\u2019t lift it with your arms.' },
-        { name:'Floor press, alternating', sub:'12 kg — 8/side', cue:'Lying on your back, press one arm up, lower with control, switch.' }
-      ],
-      finisher:{ name:'Swing finisher', sub:'12 kg \u00B7 30s on / 30s off \u00D7 3', work:30, rest:30, sets:3,
-        cue:'Max clean reps in 30s. This is the bit that should leave you breathing hard.' }
+        { name:'Floor press, alternating', sub:'12 kg — 8/side', cue:'Lying on your back, press one arm up, lower with control, switch.' },
+        { name:'Goblet squat', sub:'12 kg — 15 reps · cardio', cue:'Bell at the chest, elbows inside the knees at the bottom. Keep the pace up — this one is meant to raise the heart rate.' }
+      ]
     },
 
     { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20,
       items:[
         { name:'Bent-over row \u2014 underhand', sub:'12 kg — 10/side', cue:'Palm facing forward, not toward you. Flat-back hinge, elbow close to your ribs \u2014 the underhand grip brings the biceps in.' },
+        { name:'Goblet squat', sub:'12 kg — 15 reps · cardio', cue:'Bell at the chest, elbows inside the knees at the bottom. Keep the pace up — this one is meant to raise the heart rate.' },
         { name:'Bird-dog row', sub:'8 kg — 8/side', cue:'Hands and knees, row one arm up while extending the opposite leg straight back.' },
         { name:'High pulls', sub:'12 kg \u2014 12 reps \u00B7 cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading.' },
         { name:'KB curl, single arm', sub:'8 kg — 10/side (12 kg once strict)', cue:'Elbow pinned at your ribs, no torso swing. Lower slowly \u2014 that half builds the most.' }
@@ -147,10 +147,9 @@
         { name:'Thrusters', sub:'12 kg — 10 reps', cue:'Goblet squat into an overhead press, driven by the legs.' },
         { name:'Single-arm row', sub:'12 kg — 10/side', cue:'Hinge, row one side, control the lowering.' },
         { name:'Plank', sub:'30–45 sec', cue:'Straight line, brace core, squeeze glutes.' },
-        { name:'KB snatch', sub:'8 kg \u2014 6/side \u00B7 cardio', cue:'Swing back, snap the hips, punch your hand through overhead.' }
-      ],
-      finisher:{ name:'Curl finisher', sub:'8 kg \u00B7 40s on / 20s off \u00D7 2', work:40, rest:20, sets:2,
-        cue:'Slow 3-second lowering on every rep. Alternate sides as you fatigue.' }
+        { name:'KB snatch', sub:'8 kg \u2014 6/side \u00B7 cardio', cue:'Swing back, snap the hips, punch your hand through overhead.' },
+        { name:'KB curl, single arm', sub:'8 kg \u2014 10/side', cue:'Slow 3-second lowering on every rep. Elbow pinned at your ribs, no torso swing.' }
+      ]
     },
 
     { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine \u00B7 EMOM', minutes:18, items:[
@@ -272,6 +271,8 @@
     return steps;
   }
 
+  // UNUSED — no day defines a finisher any more; every move is a regular circuit item.
+  // Kept so a day can bolt one on again just by adding a `finisher` field.
   function appendFinisher(steps, day){
     var f = day.finisher;
     steps.push({ phase:'rest', name:'Finisher next', sub:f.name, dur:ROUND_REST, round:day.rounds, index:-1 });
@@ -307,9 +308,10 @@
   function initTimer(steps){
     stopActiveTimer();
     timerState = { steps:steps, stepIdx:0, remaining:steps[0].dur, running:false };
-    var bs = el('#btn-start'), bp = el('#btn-pause');
+    var bs = el('#btn-start'), bp = el('#btn-pause'), bn = el('#btn-next');
     if(bs) bs.disabled = false;
     if(bp) bp.disabled = true;
+    if(bn) bn.disabled = false;
     updateNowPanel();
   }
   function updateNowPanel(){
@@ -345,6 +347,32 @@
         Number(items[i].dataset.idx) === step.index && step.phase === 'work');
     }
   }
+  function finishWorkout(){
+    stopActiveTimer();
+    timerState.running = false;
+    beep(1046, 320); vibrate([200,100,200]);
+    el('#now-label').textContent = 'Done';
+    el('#now-time').textContent = '00:00';
+    el('#now-sub').textContent = 'Nice work';
+    el('#now-panel').classList.remove('phase-work','phase-transition','phase-rest');
+    fillAllDots();
+    el('#btn-start').disabled = true;
+    el('#btn-pause').disabled = true;
+    var bn = el('#btn-next');
+    if(bn) bn.disabled = true;
+  }
+  // Move to the next step now — from the countdown hitting zero, or the Next button.
+  function advanceStep(){
+    if(!timerState) return;
+    var finishedPhase = timerState.steps[timerState.stepIdx].phase;
+    timerState.stepIdx++;
+    if(timerState.stepIdx >= timerState.steps.length){ finishWorkout(); return; }
+    var nextPhase = timerState.steps[timerState.stepIdx].phase;
+    if(nextPhase === 'work'){ beep(950, 180); vibrate(200); }
+    else if(finishedPhase === 'work'){ beep(760, 140); vibrate(120); }
+    timerState.remaining = timerState.steps[timerState.stepIdx].dur;
+    updateNowPanel();
+  }
   function tick(){
     if(!timerState || !timerState.running) return;
     timerState.remaining -= 1;
@@ -352,27 +380,7 @@
     if(timerState.remaining === 3 && timerState.steps[timerState.stepIdx].phase !== 'work'){
       beep(660, 90); // short heads-up before work resumes
     }
-    if(timerState.remaining <= 0){
-      var finishedPhase = timerState.steps[timerState.stepIdx].phase;
-      timerState.stepIdx++;
-      if(timerState.stepIdx >= timerState.steps.length){
-        stopActiveTimer();
-        timerState.running = false;
-        beep(1046, 320); vibrate([200,100,200]);
-        el('#now-label').textContent = 'Done';
-        el('#now-time').textContent = '00:00';
-        el('#now-sub').textContent = 'Nice work';
-        el('#now-panel').classList.remove('phase-work','phase-transition','phase-rest');
-        fillAllDots();
-        el('#btn-start').disabled = true;
-        el('#btn-pause').disabled = true;
-        return;
-      }
-      var nextPhase = timerState.steps[timerState.stepIdx].phase;
-      if(nextPhase === 'work'){ beep(950, 180); vibrate(200); }
-      else if(finishedPhase === 'work'){ beep(760, 140); vibrate(120); }
-      timerState.remaining = timerState.steps[timerState.stepIdx].dur;
-    }
+    if(timerState.remaining <= 0){ advanceStep(); return; }
     updateNowPanel();
   }
   function startTimer(){
@@ -411,6 +419,7 @@
 
     el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
     el('#btn-pause').onclick = function(){ pauseTimer(); };
+    el('#btn-next').onclick = function(){ ensureAudio(); advanceStep(); };
     el('#btn-reset').onclick = function(){ pauseTimer(); initTimer(refreshCircuitMeta(day)); };
   }
 
@@ -418,6 +427,7 @@
     initTimer(buildEmomSteps(day));
     el('#btn-start').onclick = function(){ ensureAudio(); startTimer(); };
     el('#btn-pause').onclick = function(){ pauseTimer(); };
+    el('#btn-next').onclick = function(){ ensureAudio(); advanceStep(); };
     el('#btn-reset').onclick = function(){ pauseTimer(); initTimer(buildEmomSteps(day)); };
   }
 
@@ -498,6 +508,7 @@
         '<div class="controls">' +
           '<button class="btn btn-primary" id="btn-start">Start</button>' +
           '<button class="btn btn-secondary" id="btn-pause" disabled>Pause</button>' +
+          '<button class="btn btn-secondary" id="btn-next">Next ▸</button>' +
           '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
         '</div>' +
       '</div>';
