@@ -40,8 +40,10 @@
     margin-bottom:10px;font-size:14px;font-weight:600;color:var(--muted);}
   .info b{color:var(--ink);}
   .tip{font-size:12px;color:var(--muted);font-style:italic;margin:0 0 14px;}
+  .now-sticky{position:sticky;top:var(--topbar-h,92px);z-index:9;background:var(--bg);
+    padding:10px 0 12px;margin-bottom:6px;}
   .now{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
-    margin-bottom:18px;text-align:center;transition:border-color .15s ease;}
+    margin-bottom:0;text-align:center;transition:border-color .15s ease;}
   .now.phase-work{border-color:var(--work);}
   .now.phase-transition{border-color:var(--trans);}
   .now.phase-rest{border-color:var(--rest);}
@@ -476,7 +478,7 @@
     return '<ul class="exlist">' + html + '</ul>';
   }
   function nowPanelHtml(dotCount){
-    return '<div class="now" id="now-panel">' +
+    return '<div class="now-sticky"><div class="now" id="now-panel">' +
         '<div class="now-label" id="now-label">Ready</div>' +
         '<div class="now-time" id="now-time">00:00</div>' +
         '<div class="now-sub" id="now-sub"></div>' +
@@ -487,7 +489,7 @@
           '<button class="btn btn-secondary" id="btn-next">Next ▸</button>' +
           '<button class="btn btn-secondary" id="btn-reset">Reset</button>' +
         '</div>' +
-      '</div>';
+      '</div></div>';
   }
   function renderCircuit(day){
     return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
@@ -512,7 +514,7 @@
         return '<li class="seqitem"><span class="seqnum">' + (i+1) + '.</span><span><b>' +
           esc(s.name) + '</b> \u2014 ' + esc(s.cue) + '</span></li>';
       }).join('') + '</ol>' +
-      '<div class="now" id="now-panel">' +
+      '<div class="now-sticky"><div class="now" id="now-panel">' +
         '<div class="now-label" id="round-text">Round 1 of ' + day.rounds + '</div>' +
         '<div class="now-sub" id="rest-display">Rest ' + day.restBetween + 's between rounds</div>' +
         '<div class="dots" id="round-dots">' + dotsHtml(day.rounds) + '</div>' +
@@ -520,7 +522,7 @@
           '<button class="btn btn-primary" id="btn-complete">Complete round</button>' +
           '<button class="btn btn-secondary" id="btn-skip">Skip rest</button>' +
         '</div>' +
-      '</div></section>';
+      '</div></div></section>';
   }
   function renderList(day){
     return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
@@ -574,6 +576,17 @@
       (function(t){ t.addEventListener('click', function(){ selectTab(t.dataset.tab); }); })(tabs[i]);
     }
     selectTab(DAYS[0].id);
+
+    function syncTopbarHeight(){
+      var tb = document.querySelector('.topbar');
+      if(tb) document.documentElement.style.setProperty('--topbar-h', tb.offsetHeight + 'px');
+    }
+    syncTopbarHeight();
+    window.addEventListener('resize', syncTopbarHeight);
+    window.addEventListener('orientationchange', syncTopbarHeight);
+    if(window.ResizeObserver){
+      new ResizeObserver(syncTopbarHeight).observe(document.querySelector('.topbar'));
+    }
   });
 </script>
 </body>
