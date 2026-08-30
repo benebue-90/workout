@@ -58,7 +58,9 @@
     transition:background-color .15s ease,border-color .15s ease;}
   .dot.filled{background:var(--accent);border-color:var(--accent);}
   .dot.active{border-color:var(--work);}
-  .controls{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+  .controls{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:nowrap;}
+  .controls .btn{flex:1 1 0;min-width:0;padding:12px 8px;white-space:nowrap;
+    font-size:clamp(12px,3.4vw,14px);letter-spacing:.02em;}
   .btn{border:none;border-radius:10px;padding:12px 18px;font-weight:800;font-size:14px;
     text-transform:uppercase;letter-spacing:.03em;min-height:44px;}
   .btn-primary{background:var(--ink);color:var(--bg);}
