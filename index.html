@@ -137,11 +137,11 @@
     },
 
     { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:5, restBetween:30,
-      weight:'Single KB \u2014 start 8 kg, progress to 12 kg', reps:'8 reps each move, then switch sides',
+      weight:'Single KB \u2014 12 kg', reps:'8 reps each move, then switch sides',
       sequence:[
         { name:'Clean', cue:'Swing the bell up from between your legs, catch it in the rack position.' },
         { name:'Press', cue:'Drive the bell straight overhead from the rack position.' },
-        { name:'Reverse lunge', cue:'Step back, back knee toward the ground, drive through the front heel.' },
+        { name:'Reverse lunge with rotation', cue:'Step back, back knee toward the ground, then rotate the bell across over the front leg. Hips stay square \u2014 the twist comes from the ribs, not the pelvis.' },
         { name:'Swing', cue:'Hip hinge and snap the bell up to chest height.' }
       ]
     },
@@ -161,6 +161,14 @@
       { name:'Push-ups', sub:'20 reps', cue:'Straight line head to heels.' },
       { name:'Goblet squat', sub:'12 kg — 25 reps', cue:'Bell at the chest, elbows inside the knees at the bottom.' }
     ]},
+
+    { id:'core', type:'complex', title:'Core', subtitle:'Optional \u00B7 Core Circuit', rounds:4, restBetween:45,
+      weight:'Single KB \u2014 12 kg', reps:'4 rounds \u00B7 45s rest between rounds',
+      sequence:[
+        { name:'Iron trident', reps:'20 reps', cue:'Seated, legs straight in a V. Set the bell down outside the right hip, then between the legs, then outside the left hip \u2014 all three touches is one rep. Place it each time; this is not a fast twist.' },
+        { name:'Kettlebell halos', reps:'8 each way', cue:'Hold the horns at chest height, circle the bell around your head. Ribs down, no leaning back.' },
+        { name:'Russian twist', reps:'30 reps', cue:'Seated, legs straight, lean back slightly. Rotate the bell hip to hip, close to the body. Chest stays lifted \u2014 stop the set if your lower back starts rounding.' }
+      ]},
 
     { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2\u20133 min, every session', items:[
       { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
@@ -433,7 +441,13 @@
       }
     }
     renderRoundText(); updateComplexDots();
-    var btnComplete = el('#btn-complete'), btnSkip = el('#btn-skip'), restDisplay = el('#rest-display');
+    var btnComplete = el('#btn-complete'), btnSkip = el('#btn-skip');
+    var restDisplay = el('#rest-display'), restHint = el('#rest-hint'), panel = el('#now-panel');
+    function setRest(time, hint, resting){
+      restDisplay.textContent = time;
+      restHint.textContent = hint;
+      panel.classList.toggle('phase-rest', !!resting);
+    }
 
     btnComplete.onclick = function(){
       ensureAudio();
@@ -443,15 +457,16 @@
       updateComplexDots();
       renderRoundText();
       if(round > total){
-        restDisplay.textContent = 'Nice work';
+        setRest('Done', 'Nice work', false);
         btnComplete.disabled = true; btnSkip.disabled = true;
         return;
       }
       runCountdown(day.restBetween, function(s){
-        restDisplay.textContent = s > 0 ? 'Rest ' + formatTime(s) : 'Go!';
+        if(s > 0) setRest(formatTime(s), 'Rest', true);
+        else setRest('Go!', 'Next round', false);
       });
     };
-    btnSkip.onclick = function(){ stopActiveTimer(); restDisplay.textContent = 'Go!'; };
+    btnSkip.onclick = function(){ stopActiveTimer(); setRest('Go!', 'Next round', false); };
   }
 
   // ---------- Cooldown ----------
@@ -514,11 +529,13 @@
       '<div class="info"><b>' + esc(day.weight) + '</b> \u00B7 ' + esc(day.reps) + '</div>' +
       '<ol class="seqlist">' + day.sequence.map(function(s, i){
         return '<li class="seqitem"><span class="seqnum">' + (i+1) + '.</span><span><b>' +
-          esc(s.name) + '</b> \u2014 ' + esc(s.cue) + '</span></li>';
+          esc(s.name) + '</b>' + (s.reps ? ' \u2014 <b>' + esc(s.reps) + '</b>' : '') +
+          ' \u2014 ' + esc(s.cue) + '</span></li>';
       }).join('') + '</ol>' +
       '<div class="now-sticky"><div class="now" id="now-panel">' +
         '<div class="now-label" id="round-text">Round 1 of ' + day.rounds + '</div>' +
-        '<div class="now-sub" id="rest-display">Rest ' + day.restBetween + 's between rounds</div>' +
+        '<div class="now-time" id="rest-display">' + formatTime(day.restBetween) + '</div>' +
+        '<div class="now-sub" id="rest-hint">Rest between rounds</div>' +
         '<div class="dots" id="round-dots">' + dotsHtml(day.rounds) + '</div>' +
         '<div class="controls">' +
           '<button class="btn btn-primary" id="btn-complete">Complete round</button>' +
