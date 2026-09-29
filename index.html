@@ -33,6 +33,11 @@
   .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);
     padding:9px 14px;border-radius:999px;font-weight:700;font-size:13px;white-space:nowrap;}
   .tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  .parts{display:flex;gap:4px;margin:0 0 14px;padding:4px;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;}
+  .part{flex:1 1 0;border:none;background:transparent;color:var(--muted);padding:10px 8px;border-radius:9px;
+    font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.03em;min-height:40px;}
+  .part.active{background:var(--ink);color:var(--bg);}
   main{flex:1;padding:16px 16px 40px;}
   h1{font-size:clamp(22px,7vw,28px);font-weight:800;margin:4px 0 2px;text-transform:uppercase;letter-spacing:.01em;}
   .subtitle{color:var(--muted);font-weight:600;margin:0 0 14px;font-size:14px;}
@@ -107,6 +112,26 @@
   var ROUND_REST = 60;   // seconds rest at the end of a continuous round
 
   // ---------- Data ----------
+  // ---------- Follow-on blocks (run after the main workout, via the part switch) ----------
+  var CORE = { type:'complex', title:'Core', subtitle:'After the workout', rounds:4, restBetween:30,
+      weight:'Single KB — 12 kg (first move only)', reps:'4 rounds · 30s rest between rounds',
+      sequence:[
+        { name:'Iron trident', reps:'20 reps (alt: Russian twist, 20 reps)', cue:'Seated, legs straight in a V. Set the bell down outside the right hip, then between the legs, then outside the left hip \u2014 all three touches is one rep. Place it each time; this is not a fast twist.' },
+        { name:'Side plank \u2014 right', reps:'30 sec', cue:'Elbow under the shoulder, feet stacked. Drive the hip up so you make a straight line ankle to ear, and hold it \u2014 the hip dropping is the set ending, not a rest position.' },
+        { name:'Side plank \u2014 left', reps:'30 sec', cue:'Same setup on the other side. Match the right side\u2019s time even if this one is weaker \u2014 that is the side worth the work.' },
+        { name:'Crunches', reps:'20 reps', cue:'Lower back stays flat on the floor, ribs down toward the hips. Hands by your ears, not pulling on your neck \u2014 and lower slowly rather than dropping.' }
+      ]};
+
+  var DAY2_EMOM = { type:'emom', title:'Cardio EMOM', subtitle:'10 min · after the workout', minutes:10, items:[
+      { name:'KB swings', sub:'12 kg — 15 reps', cue:'Hip hinge and snap — not a squat. Let the bell float, don’t lift it with your arms.' },
+      { name:'Reverse lunges', sub:'8 kg goblet — 8/side', cue:'Bell at the chest, step back, back knee toward the floor, drive up through the front heel. Alternate legs.' }
+    ]};
+
+  var DAY4_EMOM = { type:'emom', title:'Cardio EMOM', subtitle:'10 min · after the workout', minutes:10, items:[
+      { name:'Goblet squats', sub:'12 kg — 15 reps', cue:'Bell at the chest, elbows inside the knees at the bottom. Steady pace, full depth.' },
+      { name:'Mountain climbers', sub:'20/side', cue:'High plank, drive the knees toward the chest one at a time. Hips level — don’t let them bounce up.' }
+    ]};
+
   var DAYS = [
     { id:'warmup', type:'list', title:'Warm-up', subtitle:'~4 min, every session', items:[
       { name:'Arm circles', sub:'20 sec each direction', cue:'Small circles, gradually bigger, then reverse direction.' },
@@ -116,7 +141,7 @@
       { name:'Shoulder pass-throughs', sub:'10 reps', cue:'Swing straight arms up and back overhead in a wide arc.' }
     ]},
 
-    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20,
+    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20, after:CORE,
       items:[
         { name:'Goblet push press', sub:'12 kg — 15 reps', cue:'Dip your knees, drive up through your legs, press the bell overhead.' },
         { name:'Push-ups', sub:'To failure', cue:'Straight line head to heels, elbows about 45\u00B0 from your body. Go until form breaks \u2014 drop to your knees and keep pressing rather than stopping early.' },
@@ -126,7 +151,7 @@
       ]
     },
 
-    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20,
+    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull Strength + Cardio', rounds:4, work:40, rest:20, after:DAY2_EMOM,
       items:[
         { name:'Bent-over row \u2014 underhand', sub:'12 kg — 10/side', cue:'Palm facing forward, not toward you. Flat-back hinge, elbow close to your ribs \u2014 the underhand grip brings the biceps in.' },
         { name:'Goblet squat', sub:'12 kg — 25 reps · cardio', cue:'Bell at the chest, elbows inside the knees at the bottom. Keep the pace up — this one is meant to raise the heart rate.' },
@@ -136,7 +161,7 @@
       ]
     },
 
-    { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:5, restBetween:30,
+    { id:'day3', type:'complex', title:'Day 3', subtitle:'Full-Body Complex', rounds:5, restBetween:30, after:CORE,
       weight:'Single KB \u2014 8 kg', reps:'8 reps each move, then switch sides \u00B7 push-ups to finish every round',
       sequence:[
         { name:'Clean', cue:'Swing the bell up from between your legs, catch it in the rack position.' },
@@ -147,7 +172,7 @@
       ]
     },
 
-    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Push/Pull Combo + Core', rounds:4, work:40, rest:20,
+    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Push/Pull Combo + Core', rounds:4, work:40, rest:20, after:DAY4_EMOM,
       items:[
         { name:'Thrusters', sub:'12 kg — 15 reps', cue:'Goblet squat into an overhead press, driven by the legs.' },
         { name:'Single-arm row', sub:'12 kg — 10/side', cue:'Hinge, row one side, control the lowering.' },
@@ -157,20 +182,11 @@
       ]
     },
 
-    { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine \u00B7 EMOM', minutes:18, items:[
+    { id:'day5', type:'emom', title:'Day 5', subtitle:'Cardio Engine \u00B7 EMOM', minutes:18, after:CORE, items:[
       { name:'KB swings', sub:'12 kg — 20 reps', cue:'Hip hinge and snap \u2014 not a squat.' },
       { name:'Push-ups', sub:'20 reps', cue:'Straight line head to heels.' },
       { name:'Goblet squat', sub:'12 kg — 25 reps', cue:'Bell at the chest, elbows inside the knees at the bottom.' }
     ]},
-
-    { id:'core', type:'complex', title:'Core', subtitle:'Optional \u00B7 Core Circuit', rounds:4, restBetween:45,
-      weight:'Single KB \u2014 12 kg (first move only)', reps:'4 rounds \u00B7 45s rest between rounds',
-      sequence:[
-        { name:'Iron trident', reps:'20 reps (alt: Russian twist, 20 reps)', cue:'Seated, legs straight in a V. Set the bell down outside the right hip, then between the legs, then outside the left hip \u2014 all three touches is one rep. Place it each time; this is not a fast twist.' },
-        { name:'Side plank \u2014 right', reps:'30 sec', cue:'Elbow under the shoulder, feet stacked. Drive the hip up so you make a straight line ankle to ear, and hold it \u2014 the hip dropping is the set ending, not a rest position.' },
-        { name:'Side plank \u2014 left', reps:'30 sec', cue:'Same setup on the other side. Match the right side\u2019s time even if this one is weaker \u2014 that is the side worth the work.' },
-        { name:'Crunches', reps:'20 reps', cue:'Lower back stays flat on the floor, ribs down toward the hips. Hands by your ears, not pulling on your neck \u2014 and lower slowly rather than dropping.' }
-      ]},
 
     { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2\u20133 min, every session', items:[
       { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
@@ -573,18 +589,36 @@
   }
 
   // ---------- Tabs ----------
-  function selectTab(id){
+  // Days with an `after` block (Core or a cardio EMOM) get a Workout / <after> switch;
+  // only one part is on screen at a time, so both can reuse the same timer and element ids.
+  function partSwitchHtml(day, part){
+    return '<div class="parts">' +
+      '<button class="part' + (part === 'main' ? ' active' : '') + '" data-part="main">Workout</button>' +
+      '<button class="part' + (part === 'after' ? ' active' : '') + '" data-part="after">' + esc(day.after.title) + '</button>' +
+    '</div>';
+  }
+  function selectTab(id, part){
     stopActiveTimer();
     timerState = null;
+    part = part || 'main';
     var tabs = document.querySelectorAll('.tab');
     for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.tab === id);
     var day = DAYS.filter(function(d){ return d.id === id; })[0];
-    var content = el('#content');
-    if(day.type === 'list'){ content.innerHTML = renderList(day); }
-    else if(day.type === 'stretch'){ content.innerHTML = renderStretch(day); attachStretchHandlers(day); }
-    else if(day.type === 'circuit'){ content.innerHTML = renderCircuit(day); attachCircuitHandlers(day); }
-    else if(day.type === 'emom'){ content.innerHTML = renderEmom(day); attachEmomHandlers(day); }
-    else if(day.type === 'complex'){ content.innerHTML = renderComplex(day); attachComplexHandlers(day); }
+    var block = (part === 'after' && day.after) ? day.after : day;
+    var html, attach = null;
+    if(block.type === 'list'){ html = renderList(block); }
+    else if(block.type === 'stretch'){ html = renderStretch(block); attach = attachStretchHandlers; }
+    else if(block.type === 'circuit'){ html = renderCircuit(block); attach = attachCircuitHandlers; }
+    else if(block.type === 'emom'){ html = renderEmom(block); attach = attachEmomHandlers; }
+    else if(block.type === 'complex'){ html = renderComplex(block); attach = attachComplexHandlers; }
+    el('#content').innerHTML = (day.after ? partSwitchHtml(day, part) : '') + html;
+    if(attach) attach(block);
+    if(day.after){
+      var parts = document.querySelectorAll('.part');
+      for(var j=0;j<parts.length;j++){
+        (function(b){ b.addEventListener('click', function(){ selectTab(id, b.dataset.part); }); })(parts[j]);
+      }
+    }
     window.scrollTo(0,0);
   }
 
