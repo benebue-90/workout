@@ -26,8 +26,27 @@
   .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
   header.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);
     padding-top:env(safe-area-inset-top);}
-  .brand{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--muted);
-    padding:10px 16px 6px;}
+  .brand{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;cursor:pointer;
+    font-family:inherit;text-align:left;font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;
+    color:var(--muted);padding:10px 16px 6px;}
+  .prog-pill{background:var(--accent);color:var(--accent-ink,#1C1F1D);border-radius:999px;padding:3px 9px;
+    font-size:11px;letter-spacing:.08em;}
+  .brand-caret{font-size:10px;}
+  .sheet-backdrop{position:fixed;inset:0;z-index:50;background:rgba(28,31,29,.45);
+    display:flex;align-items:flex-end;justify-content:center;}
+  .sheet-backdrop[hidden]{display:none;}
+  .sheet{width:100%;max-width:480px;background:var(--bg);border-radius:16px 16px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom));}
+  .sheet-title{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--muted);
+    margin:0 0 12px;}
+  .prog-option{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 10px;font-family:inherit;
+    color:var(--ink);cursor:pointer;}
+  .prog-option.active{border-color:var(--opt-accent);box-shadow:0 0 0 1px var(--opt-accent) inset;}
+  .prog-dot{width:12px;height:12px;border-radius:50%;background:var(--opt-accent);flex:0 0 auto;}
+  .prog-name{display:block;font-weight:800;font-size:15px;}
+  .prog-blurb{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:3px;}
+  .prog-check{margin-left:auto;font-weight:800;font-size:18px;color:var(--opt-accent);}
   .tabs{display:flex;gap:6px;overflow-x:auto;padding:0 12px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);
@@ -99,11 +118,17 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand">Terrace KB Program</div>
+    <button class="brand" id="brand" aria-haspopup="dialog" aria-expanded="false">Terrace KB <span class="prog-pill" id="prog-pill"></span><span class="brand-caret" aria-hidden="true">▾</span></button>
     <div class="tabs" id="tabs"></div>
   </header>
   <main id="content"></main>
   <footer class="note">Turn Silent Mode off for beeps. Vibration works either way.</footer>
+</div>
+<div class="sheet-backdrop" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-label="Choose program">
+    <div class="sheet-title">Program</div>
+    <div id="sheet-list"></div>
+  </div>
 </div>
 
 <script>
@@ -112,7 +137,23 @@
   var ROUND_REST = 30;   // seconds rest at the end of a continuous round
 
   // ---------- Data ----------
-  // ---------- Follow-on blocks (run after the main workout, via the part switch) ----------
+  // ---------- Shared by every program ----------
+  var WARMUP = { id:'warmup', type:'list', title:'Warm-up', subtitle:'~4 min, every session', items:[
+      { name:'Arm circles', sub:'20 sec each direction', cue:'Small circles, gradually bigger, then reverse direction.' },
+      { name:'Kettlebell halos', sub:'8 kg — 10 each way', cue:'Hold the horns at chest height, circle it around your head, brace your core.' },
+      { name:'Bodyweight squats', sub:'15 reps', cue:'Hips back, chest up, drive through your heels.' },
+      { name:'Inchworm walkout', sub:'8 reps (alt: Cat-Cow, 10 reps)', cue:'Hinge, walk your hands out to a plank, walk back, stand up.' },
+      { name:'Shoulder pass-throughs', sub:'10 reps', cue:'Swing straight arms up and back overhead in a wide arc.' }
+    ]};
+
+  var COOLDOWN = { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2\u20133 min, every session', items:[
+      { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
+      { name:'Cross-body shoulder stretch', sub:'30 sec each side', cue:'Pull a straight arm across your chest with the other hand.' },
+      { name:'Lat stretch on rail/ledge', sub:'30 sec each side', cue:'Hold a rail or ledge, sink your hips back, let your chest drop.' }
+    ]};
+
+  // ---------- V1 · Classic ----------
+  // Follow-on blocks (run after the main workout, via the part switch)
   var CORE = { type:'complex', title:'Core', subtitle:'After the workout', rounds:4, restBetween:30,
       weight:'Single KB — 12 kg (first move only)', reps:'4 rounds · 30s rest between rounds',
       sequence:[
@@ -132,14 +173,8 @@
       { name:'Mountain climbers', sub:'20/side', cue:'High plank, drive the knees toward the chest one at a time. Hips level — don’t let them bounce up.' }
     ]};
 
-  var DAYS = [
-    { id:'warmup', type:'list', title:'Warm-up', subtitle:'~4 min, every session', items:[
-      { name:'Arm circles', sub:'20 sec each direction', cue:'Small circles, gradually bigger, then reverse direction.' },
-      { name:'Kettlebell halos', sub:'8 kg — 10 each way', cue:'Hold the horns at chest height, circle it around your head, brace your core.' },
-      { name:'Bodyweight squats', sub:'15 reps', cue:'Hips back, chest up, drive through your heels.' },
-      { name:'Inchworm walkout', sub:'8 reps (alt: Cat-Cow, 10 reps)', cue:'Hinge, walk your hands out to a plank, walk back, stand up.' },
-      { name:'Shoulder pass-throughs', sub:'10 reps', cue:'Swing straight arms up and back overhead in a wide arc.' }
-    ]},
+  var V1_DAYS = [
+    WARMUP,
 
     { id:'day1', type:'circuit', title:'Day 1', subtitle:'Push Power + Cardio', rounds:4, work:40, rest:20, after:CORE,
       items:[
@@ -188,12 +223,91 @@
       { name:'Goblet squat', sub:'12 kg — 25 reps', cue:'Bell at the chest, elbows inside the knees at the bottom.' }
     ]},
 
-    { id:'cooldown', type:'stretch', title:'Cooldown', subtitle:'~2\u20133 min, every session', items:[
-      { name:'Chest doorway stretch', sub:'30 sec each side', cue:'Forearm on the frame, lean forward through the doorway.' },
-      { name:'Cross-body shoulder stretch', sub:'30 sec each side', cue:'Pull a straight arm across your chest with the other hand.' },
-      { name:'Lat stretch on rail/ledge', sub:'30 sec each side', cue:'Hold a rail or ledge, sink your hips back, let your chest drop.' }
-    ]}
+    COOLDOWN
   ];
+
+  // ---------- V2 · Shoulders ----------
+  var V2_GETUPS = { type:'emom', title:'Get-ups', subtitle:'6 min · before the complex', minutes:6,
+    tip:'One slow rep per minute, alternating sides. Use the rest of the minute to reset — this is about control, not speed.',
+    items:[
+      { name:'Turkish get-up — right', sub:'8 kg → 12 kg · 1 slow rep', cue:'Bell in the right hand, arm locked out, eyes on the bell the whole way. Roll to the elbow, then the hand, bridge the hips, sweep the left leg through to a kneel and stand. Reverse it slowly to lie back down.' },
+      { name:'Turkish get-up — left', sub:'8 kg → 12 kg · 1 slow rep', cue:'Mirror of the right side: bell in the left hand, arm locked, eyes on the bell. Move to 12 kg only once both sides feel smooth at 8 kg.' }
+    ]};
+
+  var V2_DAY2_EMOM = { type:'emom', title:'Cardio EMOM', subtitle:'10 min · after the workout', minutes:10, items:[
+      { name:'Single-arm swing', sub:'16 kg — 10/side', cue:'Same hip snap as a two-hand swing, one hand on the bell. Keep your shoulders square — the load will try to twist you.' },
+      { name:'Reverse lunges', sub:'12 kg goblet — 20 reps (10/side)', cue:'Bell at the chest, step back, back knee toward the floor, drive up through the front heel. Alternate legs.' }
+    ]};
+
+  var V2_DAY4_EMOM = { type:'emom', title:'Cardio EMOM', subtitle:'10 min · after the workout', minutes:10, items:[
+      { name:'Goblet squats', sub:'16 kg — 12 reps', cue:'Bell at the chest, elbows inside the knees at the bottom. Full depth, steady pace.' },
+      { name:'Mountain climbers', sub:'20/side', cue:'High plank, drive the knees toward the chest one at a time. Hips level — don’t let them bounce up.' }
+    ]};
+
+  var V2_DAYS = [
+    WARMUP,
+
+    { id:'day1', type:'circuit', title:'Day 1', subtitle:'Press · Shoulders + Chest', rounds:4, work:40, rest:20,
+      items:[
+        { name:'Push press', sub:'16 kg — 6/side', cue:'Bell in the rack. Short dip at the knees, then drive up hard and let the legs launch the bell overhead. Lock out, lower under control back to the rack.' },
+        { name:'Floor press', sub:'16 kg — 8/side', cue:'On your back, elbow on the floor at about 45°. Press straight up, pause at the top, lower until the elbow touches.' },
+        { name:'Lateral raise', sub:'8 kg — 10/side', cue:'Bell by the handle at your side, soft elbow. Raise it out to shoulder height leading with the elbow — no swinging.' },
+        { name:'Decline push-ups', sub:'Feet on a ledge — max reps', cue:'Feet on a bench or ledge, hands a little wider than the shoulders. Straight line head to heels — the decline shifts the work to upper chest and shoulders.' },
+        { name:'KB swings', sub:'16 kg — 15 reps · cardio', cue:'Hip hinge and snap — not a squat. Let the bell float, don’t lift it with your arms.' },
+        { name:'Suitcase march', sub:'16 kg — 20 sec/side', cue:'Bell in one hand at your side, march on the spot. Stay perfectly upright — don’t lean away from the bell. Switch hands at 20 seconds.' }
+      ]
+    },
+
+    { id:'day2', type:'circuit', title:'Day 2', subtitle:'Pull · Back, Traps + Rear Delts', rounds:4, work:40, rest:20, after:V2_DAY2_EMOM,
+      items:[
+        { name:'Bent-over row', sub:'16 kg — 10/side', cue:'Flat-back hinge, free hand on your knee. Pull the bell to your hip with the elbow close to the ribs, lower under control.' },
+        { name:'High pulls', sub:'16 kg — 12 reps · cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading high. Squeeze the upper back at the top.' },
+        { name:'Rear-delt fly', sub:'8 kg — 10/side', cue:'Hinge over, bell hanging under the shoulder. Raise it out to the side with a soft elbow until the arm is level with your back. Slow on the way down.' },
+        { name:'Suitcase shrug', sub:'16 kg — 12/side', cue:'Stand tall, bell at your side. Shrug straight up toward the ear, hold a beat, lower slowly. No rolling the shoulders.' },
+        { name:'Half-kneeling woodchop', sub:'8 kg — 8/side', cue:'Kneel on one knee, bell by the horns. Chop diagonally from high over one shoulder to low past the opposite hip. The twist comes from the ribs — hips stay square.' }
+      ]
+    },
+
+    { id:'day3', type:'complex', title:'Day 3', subtitle:'Technical · Get-ups + Complex', rounds:5, restBetween:30,
+      before:V2_GETUPS, mainLabel:'Complex',
+      weight:'Single KB — 12 kg', reps:'5 reps each move, then switch sides',
+      sequence:[
+        { name:'Clean', cue:'Swing the bell up from between your legs and catch it softly in the rack, forearm vertical.' },
+        { name:'Press', cue:'Strict, from the rack straight overhead. Lock out with the biceps by the ear.' },
+        { name:'Windmill', cue:'From the lockout, feet turned out away from the bell. Eyes on the bell, push the hip out and slide the free hand down the inside of the leg. Arm stays vertical — come back up by squeezing the obliques.' },
+        { name:'Front-rack reverse lunge', cue:'Bell back in the rack. Step back, back knee toward the floor, drive up through the front heel.' }
+      ]
+    },
+
+    { id:'day4', type:'circuit', title:'Day 4', subtitle:'Upper Body + Legs', rounds:4, work:40, rest:20, after:V2_DAY4_EMOM,
+      items:[
+        { name:'Single-leg RDL', sub:'16 kg — 8/side', cue:'Bell in the hand opposite the standing leg. Hinge forward with the back leg reaching behind you until the hamstring stretches. Hips stay level.' },
+        { name:'Z-press', sub:'12 kg — 8/side', cue:'Sit on the floor, legs straight out in front, no back support. Press overhead without leaning back — the core has to hold you upright.' },
+        { name:'Squeeze press', sub:'16 kg — 12 reps', cue:'On your back, hands on the sides of the bell, palms crushing it together. Keep squeezing as you press up and lower — the squeeze is what works the chest.' },
+        { name:'KB pullover', sub:'12–16 kg — 12 reps', cue:'Lie on your back, bell by the horns over your chest. Soft elbows, lower it behind your head until the lats stretch, pull it back over. Ribs stay down.' },
+        { name:'Lateral raise', sub:'8 kg — 12/side', cue:'Bell at your side, soft elbow, raise out to shoulder height leading with the elbow. Slow and controlled — no swinging.' }
+      ]
+    },
+
+    { id:'day5', type:'emom', title:'Day 5', subtitle:'Conditioning + Obliques · EMOM', minutes:20, items:[
+      { name:'KB swings', sub:'16 kg — 15 reps', cue:'Hip hinge and snap — not a squat.' },
+      { name:'Push-ups', sub:'15 reps', cue:'Straight line head to heels, elbows about 45° from your body.' },
+      { name:'Alternating cleans', sub:'12 kg — 6/side', cue:'Swing the bell up and catch it softly in the rack. Six on one side, then six on the other — the upper back and traps do the pulling.' },
+      { name:'Iron trident', sub:'12 kg — 12 reps (alt: Russian twist)', cue:'Seated, legs straight in a V. Bell outside the right hip, between the legs, outside the left hip — three touches is one rep. Place it each time.' }
+    ]},
+
+    COOLDOWN
+  ];
+
+  // ---------- Programs ----------
+  var PROGRAMS = [
+    { id:'v1', name:'V1 · Classic', short:'V1 Classic', accent:'#B8892B', accentInk:'#1C1F1D', days:V1_DAYS,
+      blurb:'The original routine: push/pull circuits, full-body complex, core or cardio after each day.' },
+    { id:'v2', name:'V2 · Shoulders', short:'V2 Shoulders', accent:'#2D5B9A', accentInk:'#FFFFFF', days:V2_DAYS,
+      blurb:'Shoulders, traps and obliques first. 16 kg, fewer push-ups and squats, core built into every day.' }
+  ];
+  var program = PROGRAMS[0];
+  var DAYS = program.days;
 
   // ---------- Helpers ----------
   function el(sel){ return document.querySelector(sel); }
@@ -538,7 +652,7 @@
     return '<section><h1>' + day.title + '</h1><p class="subtitle">' + day.subtitle + '</p>' +
       '<div class="info">' + day.minutes + ' min EMOM \u00B7 cycle: ' +
         day.items.map(function(it){ return esc(it.name); }).join(' \u2192 ') + '</div>' +
-      '<div class="tip">Finish the reps early? That rest is the point \u2014 but if you\u2019re getting 20s+ back every minute, add reps.</div>' +
+      '<div class="tip">' + (day.tip ? esc(day.tip) : 'Finish the reps early? That rest is the point \u2014 but if you\u2019re getting 20s+ back every minute, add reps.') + '</div>' +
       nowPanelHtml(cycleTotal) +
       exListHtml(day) + '</section>';
   }
@@ -589,40 +703,47 @@
   }
 
   // ---------- Tabs ----------
-  // Days with an `after` block (Core or a cardio EMOM) get a Workout / <after> switch;
-  // only one part is on screen at a time, so both can reuse the same timer and element ids.
-  function partSwitchHtml(day, part){
-    return '<div class="parts">' +
-      '<button class="part' + (part === 'main' ? ' active' : '') + '" data-part="main">Workout</button>' +
-      '<button class="part' + (part === 'after' ? ' active' : '') + '" data-part="after">' + esc(day.after.title) + '</button>' +
-    '</div>';
+  // A day can carry a `before` and/or `after` block (get-ups, Core, a cardio EMOM). Those days get a
+  // part switch; only one part is on screen at a time, so every part reuses the same timer and element ids.
+  function dayParts(day){
+    var parts = [];
+    if(day.before) parts.push({ key:'before', label:day.before.title, block:day.before });
+    parts.push({ key:'main', label:day.mainLabel || 'Workout', block:day });
+    if(day.after) parts.push({ key:'after', label:day.after.title, block:day.after });
+    return parts;
+  }
+  function partSwitchHtml(parts, current){
+    return '<div class="parts">' + parts.map(function(p){
+      return '<button class="part' + (p.key === current ? ' active' : '') + '" data-part="' + p.key + '">' + esc(p.label) + '</button>';
+    }).join('') + '</div>';
   }
   function selectTab(id, part){
     stopActiveTimer();
     timerState = null;
-    part = part || 'main';
     var tabs = document.querySelectorAll('.tab');
     for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.tab === id);
     var day = DAYS.filter(function(d){ return d.id === id; })[0];
-    var block = (part === 'after' && day.after) ? day.after : day;
+    var parts = dayParts(day);
+    // default to the first part, so a day with a `before` block opens on it
+    var current = parts.filter(function(p){ return p.key === part; })[0] || parts[0];
+    var block = current.block;
     var html, attach = null;
     if(block.type === 'list'){ html = renderList(block); }
     else if(block.type === 'stretch'){ html = renderStretch(block); attach = attachStretchHandlers; }
     else if(block.type === 'circuit'){ html = renderCircuit(block); attach = attachCircuitHandlers; }
     else if(block.type === 'emom'){ html = renderEmom(block); attach = attachEmomHandlers; }
     else if(block.type === 'complex'){ html = renderComplex(block); attach = attachComplexHandlers; }
-    el('#content').innerHTML = (day.after ? partSwitchHtml(day, part) : '') + html;
+    el('#content').innerHTML = (parts.length > 1 ? partSwitchHtml(parts, current.key) : '') + html;
     if(attach) attach(block);
-    if(day.after){
-      var parts = document.querySelectorAll('.part');
-      for(var j=0;j<parts.length;j++){
-        (function(b){ b.addEventListener('click', function(){ selectTab(id, b.dataset.part); }); })(parts[j]);
+    if(parts.length > 1){
+      var buttons = document.querySelectorAll('.part');
+      for(var j=0;j<buttons.length;j++){
+        (function(b){ b.addEventListener('click', function(){ selectTab(id, b.dataset.part); }); })(buttons[j]);
       }
     }
     window.scrollTo(0,0);
   }
-
-  document.addEventListener('DOMContentLoaded', function(){
+  function renderTabs(){
     el('#tabs').innerHTML = DAYS.map(function(d){
       return '<button class="tab" data-tab="' + d.id + '">' + d.title + '</button>';
     }).join('');
@@ -630,7 +751,77 @@
     for(var i=0;i<tabs.length;i++){
       (function(t){ t.addEventListener('click', function(){ selectTab(t.dataset.tab); }); })(tabs[i]);
     }
+  }
+
+  // ---------- Programs ----------
+  // The chosen program is remembered per device. A ?program=v2 link picks it once, then the
+  // parameter is dropped from the address bar so a saved bookmark can't override the picker later.
+  var PROGRAM_KEY = 'kb.program';
+  function findProgram(id){ return PROGRAMS.filter(function(p){ return p.id === id; })[0]; }
+  function initialProgram(){
+    var id = null;
+    try{
+      var params = new URLSearchParams(window.location.search);
+      id = params.get('program');
+      if(params.has('program')){
+        params.delete('program');
+        var rest = params.toString();
+        window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
+      }
+    }catch(e){}
+    if(!findProgram(id)){
+      try{ id = window.localStorage.getItem(PROGRAM_KEY); }catch(e){ id = null; }
+    }
+    return findProgram(id) || PROGRAMS[0];
+  }
+  function workoutInProgress(){
+    return !!activeTimer || !!(timerState && (timerState.running || timerState.stepIdx > 0));
+  }
+  function applyProgram(p){
+    program = p;
+    DAYS = p.days;
+    try{ window.localStorage.setItem(PROGRAM_KEY, p.id); }catch(e){}
+    document.documentElement.style.setProperty('--accent', p.accent);
+    document.documentElement.style.setProperty('--accent-ink', p.accentInk);
+    el('#prog-pill').textContent = p.short;
+    renderTabs();
     selectTab(DAYS[0].id);
+  }
+  function openProgramSheet(){
+    el('#sheet-list').innerHTML = PROGRAMS.map(function(p){
+      var active = p.id === program.id;
+      return '<button class="prog-option' + (active ? ' active' : '') + '" data-program="' + p.id + '"' +
+          ' style="--opt-accent:' + p.accent + '">' +
+          '<span class="prog-dot"></span>' +
+          '<span class="prog-text"><span class="prog-name">' + esc(p.name) + '</span>' +
+          '<span class="prog-blurb">' + esc(p.blurb) + '</span></span>' +
+          (active ? '<span class="prog-check">✓</span>' : '') +
+        '</button>';
+    }).join('');
+    el('#sheet').hidden = false;
+    el('#brand').setAttribute('aria-expanded', 'true');
+  }
+  function closeProgramSheet(){
+    el('#sheet').hidden = true;
+    el('#brand').setAttribute('aria-expanded', 'false');
+  }
+  function chooseProgram(id){
+    closeProgramSheet();
+    var next = findProgram(id);
+    if(!next || next.id === program.id) return;
+    if(workoutInProgress() && !window.confirm('Stop your workout and switch to ' + next.name + '?')) return;
+    applyProgram(next);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    el('#brand').addEventListener('click', openProgramSheet);
+    el('#sheet').addEventListener('click', function(e){
+      var opt = e.target.closest ? e.target.closest('.prog-option') : null;
+      if(opt){ chooseProgram(opt.dataset.program); return; }
+      if(e.target === el('#sheet')) closeProgramSheet();
+    });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeProgramSheet(); });
+    applyProgram(initialProgram());
 
     function syncTopbarHeight(){
       var tb = document.querySelector('.topbar');
