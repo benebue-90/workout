@@ -227,12 +227,12 @@
   ];
 
   // ---------- V2 · Shoulders ----------
-  var V2_GETUPS = { type:'emom', title:'Get-ups', subtitle:'6 min · before the complex', minutes:6,
-    tip:'One slow rep per minute, alternating sides. Use the rest of the minute to reset — this is about control, not speed.',
-    items:[
-      { name:'Turkish get-up — right', sub:'8 kg → 12 kg · 1 slow rep', cue:'Bell in the right hand, arm locked out, eyes on the bell the whole way. Roll to the elbow, then the hand, bridge the hips, sweep the left leg through to a kneel and stand. Reverse it slowly to lie back down.' },
-      { name:'Turkish get-up — left', sub:'8 kg → 12 kg · 1 slow rep', cue:'Mirror of the right side: bell in the left hand, arm locked, eyes on the bell. Move to 12 kg only once both sides feel smooth at 8 kg.' }
-    ]};
+  var V2_CHEST = { type:'complex', title:'Chest', subtitle:'3 rounds · before the complex', rounds:3, restBetween:60,
+      doneLabel:'Chest done', weight:'Single KB — 16 kg', reps:'3 rounds · 60s rest between rounds',
+      sequence:[
+        { name:'Decline push-ups', reps:'To failure', cue:'Feet on a bench or ledge, hands a little wider than the shoulders. Straight line head to heels, all the way to failure — knees down for a few more if you want to squeeze out the last reps.' },
+        { name:'Floor press', reps:'16 kg — 10/side', cue:'Straight from the push-ups. On your back, elbow on the floor at about 45°. Press straight up, pause at the top, lower until the elbow touches. Ten one side, then ten the other.' }
+      ]};
 
   var V2_DAY2_EMOM = { type:'emom', title:'Cardio EMOM', subtitle:'10 min · after the workout', minutes:10, items:[
       { name:'Single-arm swing', sub:'16 kg — 10/side', cue:'Same hip snap as a two-hand swing, one hand on the bell. Keep your shoulders square — the load will try to twist you.' },
@@ -262,14 +262,14 @@
       items:[
         { name:'Bent-over row', sub:'16 kg — 10/side', cue:'Flat-back hinge, free hand on your knee. Pull the bell to your hip with the elbow close to the ribs, lower under control.' },
         { name:'High pulls', sub:'16 kg — 12 reps · cardio', cue:'Like a swing, but pull the bell up close to chest height, elbow leading high. Squeeze the upper back at the top.' },
-        { name:'Rear-delt fly', sub:'8 kg — 10/side', cue:'Hinge over, bell hanging under the shoulder. Raise it out to the side with a soft elbow until the arm is level with your back. Slow on the way down.' },
+        { name:'Standing pullover', sub:'12 kg — 12 reps', cue:'Hold the bell by the horns at your hips, arms straight. Lift it up in front of you, along the chest and all the way overhead, then lower under control. Ribs stay down — don’t lean back to get it up.' },
         { name:'Suitcase shrug', sub:'16 kg — 12/side', cue:'Stand tall, bell at your side. Shrug straight up toward the ear, hold a beat, lower slowly. No rolling the shoulders.' },
         { name:'Half-kneeling woodchop', sub:'8 kg — 8/side', cue:'Kneel on one knee, bell by the horns. Chop diagonally from high over one shoulder to low past the opposite hip. The twist comes from the ribs — hips stay square.' }
       ]
     },
 
-    { id:'day3', type:'complex', title:'Day 3', subtitle:'Technical · Get-ups + Complex', rounds:5, restBetween:30,
-      before:V2_GETUPS, mainLabel:'Complex',
+    { id:'day3', type:'complex', title:'Day 3', subtitle:'Chest + Complex', rounds:5, restBetween:30,
+      before:V2_CHEST, mainLabel:'Complex',
       weight:'Single KB — 12 kg', reps:'5 reps each move, then switch sides',
       sequence:[
         { name:'Clean', cue:'Swing the bell up from between your legs and catch it softly in the rack, forearm vertical.' },
@@ -563,7 +563,7 @@
     var round = 1;
     var total = day.rounds;
     function renderRoundText(){
-      el('#round-text').textContent = round > total ? 'Complex complete' : 'Round ' + round + ' of ' + total;
+      el('#round-text').textContent = round > total ? (day.doneLabel || 'Complex complete') : 'Round ' + round + ' of ' + total;
     }
     function updateComplexDots(){
       var dots = document.querySelectorAll('#round-dots .dot');
